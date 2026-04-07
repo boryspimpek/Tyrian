@@ -1,106 +1,135 @@
 import os
+import json
+import sys
 from PIL import Image
 
 # --- KONFIGURACJA ---
-TILES_PATH = "extracted_newsh1.shp" 
+BASE_TILES_DIR = "."  
 OUTPUT_PATH = "assembled_enemies"
-TILE_W, TILE_H = 12, 14
-ROW_OFFSET = 19  # Odległość w pamięci do kafelka poniżej
+JSON_FILE = "enemies.json" 
 
-def assemble_enemy(enemy_data, tiles_dir, out_dir):
+TILE_W, TILE_H = 12, 14
+# ROW_OFFSET to odległość w arkuszu między kafelkiem górnym a dolnym (często 19-20)
+ROW_OFFSET = 19 
+
+def get_tiles_path(shapebank):
+    return os.path.join(BASE_TILES_DIR, f"extracted_newsh{shapebank}.shp")
+
+def to_s16(val):
+    """Konwertuje unsigned 16-bit na signed 16-bit (np. 65535 -> -1)."""
+    return val if val < 32768 else val - 65536
+
+def render_complex(idx, egraphic, tiles_dir, out_dir):
+    """Logika dla dużych obiektów składanych z instrukcji (MegaShapes)."""
+    print(f"-> Wróg {idx}: Tryb Złożony (MegaShape)...")
+    canvas = Image.new('RGBA', (256, 256), (0, 0, 0, 0)) # Duży bufor
+    
+    curr_x, curr_y = 128, 128 # Start od środka
+    found_any = False
+
+    # W trybie złożonym egraphic jest listą instrukcji:
+    # Małe liczby ujemne to przesunięcia, duże dodatnie to ID kafelka
+    for val in egraphic:
+        if val == 0: continue
+        
+        s_val = to_s16(val)
+        
+        if s_val == -1: # Częsty znacznik końca w Tyrianie
+            break
+        
+        if s_val < 0:
+            # Przykład: mała liczba ujemna może przesuwać kursor rysowania
+            # Dostosuj wg obserwacji (np. -13 to może być nowa linia)
+            curr_y += TILE_H
+            curr_x = 128 
+            continue
+
+        tile_idx = val - 1
+        tile_path = os.path.join(tiles_dir, f"block_{tile_idx:04d}.bmp")
+        
+        if os.path.exists(tile_path):
+            with Image.open(tile_path).convert("RGBA") as img:
+                canvas.paste(img, (curr_x, curr_y), img)
+                curr_x += TILE_W
+                found_any = True
+
+    if found_any:
+        # Kadrowanie do zawartości
+        bbox = canvas.getbbox()
+        if bbox:
+            canvas = canvas.crop(bbox)
+        canvas.save(os.path.join(out_dir, f"enemy_{idx:03d}_complex.png"))
+
+def assemble_enemy(enemy_data, out_dir):
     idx = enemy_data.get("index")
     egraphic = enemy_data.get("egraphic", [])
     bank = enemy_data.get("shapebank")
+    esize = enemy_data.get("esize", 0)
+    ani = enemy_data.get("ani", 1)
     
-    if bank != 1 or not egraphic:
+    if not egraphic: return
+
+    tiles_dir = get_tiles_path(bank)
+    if not os.path.exists(tiles_dir):
+        print(f"BŁĄD: Brak folderu {tiles_dir}")
         return
 
-    # Jeśli nie ma wielkich liczb (65523+), to jest to wróg animowany klatka po klatce
-    is_animation = not any(v > 32768 for v in egraphic)
+    # DECYZJA O TRYBIE
+    # Sprawdzamy czy w pierwszych kilku wartościach są flagi ujemne (np. 65535)
+    is_complex = any(to_s16(v) < 0 for v in egraphic[:5])
 
-    if is_animation:
-        print(f"-> Przetwarzanie wroga {idx} (Tryb Animacji 2x2)...")
-        frame_count = 0
-        for base_tile in egraphic:
+    if is_complex:
+        render_complex(idx, egraphic, tiles_dir, out_dir)
+        
+    elif esize == 0 or esize == 1:
+        # TRYB 2x2 (Standardowy statek)
+        print(f"-> Wróg {idx} (Bank {bank}): Tryb 2x2 (Animacja)...")
+        # W Tyrianie 'ani' mówi ile klatek wziąć z egraphic
+        for f_idx in range(min(ani, len(egraphic))):
+            base_tile = egraphic[f_idx]
             if base_tile <= 0: continue
             
-            # KOREKTA: Przesuwamy o -1, bo JSON wskazuje na prawy-górny lub środek
             start_tile = base_tile - 1
+            canvas = Image.new('RGBA', (TILE_W * 2, TILE_H * 2), (0, 0, 0, 0))
             
-            canvas = Image.new('RGBA', (24, 28), (0, 0, 0, 0))
-            # Siatka 2x2 oparta na przesunięciu 19
-            offsets = [
-                (0, 0, 0),               # Góra-Lewo
-                (1, 12, 0),              # Góra-Prawo
-                (ROW_OFFSET, 0, 14),     # Dół-Lewo
-                (ROW_OFFSET + 1, 12, 14) # Dół-Prawo
-            ]
+            # Kafelki w Tyrianie 2x2 są często ułożone: 
+            # [T] [T+1]
+            # [T+Row] [T+Row+1]
+            offsets = [(0, 0, 0), (1, TILE_W, 0), (ROW_OFFSET, 0, TILE_H), (ROW_OFFSET + 1, TILE_W, TILE_H)]
             
-            found = False
             for off, dx, dy in offsets:
                 tile_path = os.path.join(tiles_dir, f"block_{start_tile + off:04d}.bmp")
                 if os.path.exists(tile_path):
-                    with Image.open(tile_path) as img:
-                        canvas.paste(img.convert("RGBA"), (dx, dy))
-                        found = True
+                    with Image.open(tile_path).convert("RGBA") as img:
+                        canvas.paste(img, (dx, dy), img)
             
-            if found:
-                out_fn = os.path.join(out_dir, f"enemy_{idx:03d}_frame_{frame_count:02d}.png")
-                canvas.save(out_fn)
-                frame_count += 1
-    
+            canvas.save(os.path.join(out_dir, f"enemy_{idx:03d}_f{f_idx:02d}.png"))
+
     else:
-        print(f"-> Przetwarzanie wroga {idx} (Tryb Złożony)...")
-        # Tworzymy większe płótno dla dużych statków
-        canvas = Image.new('RGBA', (300, 300), (0, 0, 0, 0))
-        curr_x, curr_y = 0, 0
-        found_any = False
-        
-        for val in egraphic:
-            if val == 0: continue
-            if val == 27: break
+        # TRYB 1x1 (Pociski / Małe obiekty)
+        print(f"-> Wróg {idx} (Bank {bank}): Tryb 1x1...")
+        for f_idx in range(min(ani, len(egraphic))):
+            val = egraphic[f_idx]
+            if val <= 0: continue
             
-            if val > 32768: # Np. 65523 -> Nowa linia (powrót o 13 kafelków)
-                curr_x = 0
-                curr_y += TILE_H
-            else:
-                # Tutaj też stosujemy korektę -1, jeśli statki złożone są rozcięte
-                tile_idx = val - 1 
-                tile_path = os.path.join(tiles_dir, f"block_{tile_idx:04d}.bmp")
-                
-                if os.path.exists(tile_path):
-                    with Image.open(tile_path) as img:
-                        canvas.paste(img.convert("RGBA"), (curr_x, curr_y))
-                        found_any = True
-                curr_x += TILE_W
-        
-        if found_any:
-            bbox = canvas.getbbox()
-            if bbox:
-                out_fn = os.path.join(out_dir, f"enemy_{idx:03d}_full.png")
-                canvas.crop(bbox).save(out_fn)
+            tile_path = os.path.join(tiles_dir, f"block_{val-1:04d}.bmp")
+            if os.path.exists(tile_path):
+                with Image.open(tile_path).convert("RGBA") as img:
+                    img.save(os.path.join(out_dir, f"enemy_{idx:03d}_f{f_idx:02d}.png"))
 
 def main():
-    if not os.path.exists(OUTPUT_PATH):
-        os.makedirs(OUTPUT_PATH)
+    if not os.path.exists(OUTPUT_PATH): os.makedirs(OUTPUT_PATH)
+    if not os.path.exists(JSON_FILE): return
 
-    # Tutaj możesz wkleić całą listę JSON lub wczytać z pliku
-    # Przykład dla Twoich dwóch typów wrogów:
-    enemies_json = [
-        {
-            "index": 156, "shapebank": 1, 
-            "egraphic": [77, 79, 81, 83, 85, 87, 89, 91, 93, 115, 117, 119, 0, 0, 0, 0, 0, 0, 0, 0]
-        },
-    ]
+    with open(JSON_FILE, 'r', encoding='utf-8') as f:
+        all_enemies = json.load(f)
 
-    # Jeśli masz plik, użyj:
-    # with open('enemies.json', 'r') as f:
-    #     enemies_json = json.load(f)
-
-    for enemy in enemies_json:
-        assemble_enemy(enemy, TILES_PATH, OUTPUT_PATH)
-    
-    print("\nZakończono! Sprawdź folder 'assembled_enemies'.")
+    if len(sys.argv) > 1:
+        target_idx = int(sys.argv[1])
+        enemy = next((e for e in all_enemies if e.get("index") == target_idx), None)
+        if enemy: assemble_enemy(enemy, OUTPUT_PATH)
+    else:
+        print("Użycie: python skrypt.py <indeks_wroga>")
 
 if __name__ == "__main__":
     main()
