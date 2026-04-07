@@ -38,7 +38,10 @@ EVENT_TYPES = {
     17: "spawn_ground_bottom",
     18: "spawn_sky_bottom",
     19: "enemy_global_move",
-    23: "spawn_sky_bottom2",
+    20: "set_background_style",    # Zmienia sposób renderowania tła
+    21: "set_music_volume",        # Kontrola głośności lub zmiany utworu
+    22: "trigger_vibration",       # Efekty specjalne/wstrząsy
+    23: "spawn_sky_bottom2",       # Y=50 (Top) od dołu
     32: "spawn_enemy_special",
     56: "spawn_ground2_bottom"
 }
@@ -129,14 +132,14 @@ def extract_spawn_events(events):
             
         # Determine enemy type and position
         spawn_data = {
-            'dist': event['eventtime'],
-            'raw_event': event_type,
-            'enemy_id': event['eventdat'],
-            'x': event['eventdat2'] if event['eventdat2'] != -99 else 160,  # Default center
-            'y_vel': event['eventdat3'],
-            'y_offset': event['eventdat5'],
-            'link_num': event['eventdat4'],
-            'fixed_move_y': event['eventdat6']
+            'dist': event['eventtime'],      # Punkt na mapie (scroll distance), w którym akcja się odpala
+            'raw_event': event_type,         # Numer akcji (np. 6=spawn naziemny, 15=powietrzny)
+            'enemy_id': event['eventdat'],   # ID grafiki i zachowania przeciwnika
+            'x': event['eventdat2'],         # Pozycja pozioma (0-320)
+            'y_vel': event['eventdat3'],     # Prędkość pionowa (lotu lub opadania)
+            'y_offset': event['eventdat5'],  # Przesunięcie Y (pozwala na gęste ustawianie obiektów)
+            'link_num': event['eventdat4'],  # ID grupy/formacji (eventlink)
+            'fixed_move_y': event['eventdat6'], # Stały ruch pionowy (niezależny od mapy)
         }
         
         # Map event type to spawn position
