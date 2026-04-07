@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "name": "Advanced Integrity Field",
+    "power": 3,
+    "capacity": 3,
+    "regen": 131
+  },
+  {
+    "id": 2,
+    "name": "Gencore Low Energy Shield",
+    "power": 4,
+    "capacity": 4,
+    "regen": 153
+  },
+  {
+    "id": 3,
+    "name": "Gencore High Energy Shield",
+    "power": 6,
+    "capacity": 5,
+    "regen": 153
+  },
+  {
+    "id": 4,
+    "name": "MicroCorp LXS Class A",
+    "power": 8,
+    "capacity": 6,
+    "regen": 155
+  },
+  {
+    "id": 5,
+    "name": "MicroCorp LXS Class B",
+    "power": 6,
+    "capacity": 7,
+    "regen": 157
+  }
+]
