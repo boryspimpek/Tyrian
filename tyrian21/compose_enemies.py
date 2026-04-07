@@ -1,106 +1,68 @@
 import os
-import json
-import sys
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
-# --- KONFIGURACJA ŚCIEŻEK ---
-# Zakładamy, że foldery z kafelkami są w tym samym miejscu co skrypt
-BASE_TILES_DIR = "."  # Miejsce, gdzie są foldery 'extracted_newshX.shp'
-OUTPUT_PATH = "assembled_enemies"
-JSON_FILE = "enemies.json"  # Nazwa Twojego pliku z danymi
-
+# --- KONFIGURACJA ---
+SOURCE_FOLDER = "extracted_newsh9.shp"  # Zmień na folder, który chcesz zbadać
+OUTPUT_FILE = "atlas_newsh9.png"
+TILES_PER_ROW = 20  # Ile kafelków w jednym rzędzie atlasu
 TILE_W, TILE_H = 12, 14
-ROW_OFFSET = 19 
+PADDING = 10  # Miejsce na tekst (indeks kafelka)
 
-def get_tiles_path(shapebank):
-    """Zwraca ścieżkę do folderu na podstawie numeru banku."""
-    folder_name = f"extracted_newsh{shapebank}.shp"
-    return os.path.join(BASE_TILES_DIR, folder_name)
+def create_atlas(folder_path, output_path):
+    # Pobierz listę plików i posortuj je numerami (block_0000, block_0001...)
+    files = [f for f in os.listdir(folder_path) if f.endswith('.bmp')]
+    files.sort()
 
-def assemble_enemy(enemy_data, out_dir):
-    idx = enemy_data.get("index")
-    egraphic = enemy_data.get("egraphic", [])
-    bank = enemy_data.get("shapebank")
+    if not files:
+        print("Brak plików BMP w folderze!")
+        return
+
+    num_tiles = len(files)
+    num_rows = (num_tiles + TILES_PER_ROW - 1) // TILES_PER_ROW
+
+    # Rozmiar pojedynczej komórki w atlasie (kafelek + miejsce na tekst)
+    cell_w = TILE_W + 4
+    cell_h = TILE_H + PADDING + 4
+
+    atlas_w = TILES_PER_ROW * cell_w
+    atlas_h = num_rows * cell_h
+
+    # Stwórz obraz atlasu (ciemne tło, żeby widzieć jasne kafelki)
+    atlas = Image.new('RGBA', (atlas_w, atlas_h), (40, 40, 40, 255))
+    draw = ImageDraw.Draw(atlas)
     
-    if not egraphic:
-        print(f"Brak danych graficznych dla wroga {idx}")
-        return
+    # Próba załadowania czcionki (jeśli nie masz, użyje domyślnej)
+    try:
+        font = ImageFont.load_default()
+    except:
+        font = None
 
-    tiles_dir = get_tiles_path(bank)
-    if not os.path.exists(tiles_dir):
-        print(f"BŁĄD: Nie znaleziono folderu {tiles_dir} dla banku {bank}")
-        return
+    for i, filename in enumerate(files):
+        row = i // TILES_PER_ROW
+        col = i % TILES_PER_ROW
 
-    # Logika sprawdzania czy to animacja czy złożony
-    is_animation = not any(v > 32768 for v in egraphic)
+        x = col * cell_w
+        y = row * cell_h
 
-    if is_animation:
-        print(f"-> Wróg {idx} (Bank {bank}): Generowanie klatek animacji...")
-        frame_count = 0
-        for base_tile in egraphic:
-            if base_tile <= 0: continue
-            start_tile = base_tile - 1
-            canvas = Image.new('RGBA', (24, 28), (0, 0, 0, 0))
-            offsets = [(0, 0, 0), (1, 12, 0), (ROW_OFFSET, 0, 14), (ROW_OFFSET + 1, 12, 14)]
-            found = False
-            for off, dx, dy in offsets:
-                tile_path = os.path.join(tiles_dir, f"block_{start_tile + off:04d}.bmp")
-                if os.path.exists(tile_path):
-                    with Image.open(tile_path) as img:
-                        canvas.paste(img.convert("RGBA"), (dx, dy))
-                        found = True
-            if found:
-                canvas.save(os.path.join(out_dir, f"enemy_{idx:03d}_f{frame_count:02d}.png"))
-                frame_count += 1
-    else:
-        print(f"-> Wróg {idx} (Bank {bank}): Generowanie pełnego statku...")
-        canvas = Image.new('RGBA', (400, 400), (0, 0, 0, 0))
-        curr_x, curr_y = 0, 0
-        found_any = False
-        for val in egraphic:
-            if val == 0: continue
-            if val == 27: break
-            if val > 32768:
-                curr_x = 0
-                curr_y += TILE_H
-            else:
-                tile_idx = val - 1 
-                tile_path = os.path.join(tiles_dir, f"block_{tile_idx:04d}.bmp")
-                if os.path.exists(tile_path):
-                    with Image.open(tile_path) as img:
-                        canvas.paste(img.convert("RGBA"), (curr_x, curr_y))
-                        found_any = True
-                curr_x += TILE_W
-        if found_any:
-            bbox = canvas.getbbox()
-            if bbox:
-                canvas.crop(bbox).save(os.path.join(out_dir, f"enemy_{idx:03d}_full.png"))
+        # Ścieżka do kafelka
+        tile_path = os.path.join(folder_path, filename)
+        
+        with Image.open(tile_path) as img:
+            # Wklej kafelek
+            atlas.paste(img.convert("RGBA"), (x + 2, y + PADDING))
+            
+            # Wyciągnij numer z nazwy (np. block_0077.bmp -> 77)
+            # Uwaga: Tyrian w JSON może mieć przesunięcie +1 lub 0
+            tile_num = int(filename.split('_')[1].split('.')[0])
+            
+            # Napisz numer nad kafelkiem
+            draw.text((x + 2, y), str(tile_num), fill=(200, 200, 200), font=font)
 
-def main():
-    if not os.path.exists(OUTPUT_PATH):
-        os.makedirs(OUTPUT_PATH)
-
-    # Wczytywanie JSON
-    if not os.path.exists(JSON_FILE):
-        print(f"BŁĄD: Nie znaleziono pliku {JSON_FILE}")
-        return
-
-    with open(JSON_FILE, 'r', encoding='utf-8') as f:
-        all_enemies = json.load(f)
-
-    # Pobieranie indeksu z argumentu linii komend
-    if len(sys.argv) > 1:
-        target_idx = int(sys.argv[1])
-        # Szukamy wroga o podanym indeksie
-        enemy = next((e for e in all_enemies if e.get("index") == target_idx), None)
-        if enemy:
-            assemble_enemy(enemy, OUTPUT_PATH)
-            print("Zakończono.")
-        else:
-            print(f"Nie znaleziono wroga o indeksie {target_idx}")
-    else:
-        print("Użycie: python skrypt.py <indeks_wroga>")
-        print("Przykład: python skrypt.py 156")
+    atlas.save(output_path)
+    print(f"Atlas gotowy: {output_path} ({num_tiles} kafelków)")
 
 if __name__ == "__main__":
-    main()
+    if os.path.exists(SOURCE_FOLDER):
+        create_atlas(SOURCE_FOLDER, OUTPUT_FILE)
+    else:
+        print(f"Folder {SOURCE_FOLDER} nie istnieje!")

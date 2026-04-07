@@ -23,15 +23,15 @@ def unpack_enemy(data):
     tup = struct.unpack(struct_fmt, data)
     d = {}
     
-    d['ani'] = tup[0]               # Animacja
-    d['tur'] = list(tup[1:4])       # ID broni (3 bronie)
-    d['freq'] = list(tup[4:7])      # Częstotliwość strzału (3 wartości)
-    d['xmove'] = tup[7]             # Prędkość X (signed byte)
-    d['ymove'] = tup[8]             # Prędkość Y (signed byte)
-    d['xaccel'] = tup[9]            # Akceleracja X (signed byte)
-    d['yaccel'] = tup[10]           # Akceleracja Y (signed byte)
-    d['xcaccel'] = tup[11]          # Dodatkowa akceleracja X (signed byte)
-    d['ycaccel'] = tup[12]          # Dodatkowa akceleracja Y (signed byte)
+    d['ani'] = tup[0]               # Number of frames in animation
+    d['tur'] = list(tup[1:4])       # Type of shot to fire (index into weapon) (1st: downwards, 2nd: right, 3rd: left)
+    d['freq'] = list(tup[4:7])      # Wait between shots
+    d['xmove'] = tup[7]             # Horizontal speed (signed byte)
+    d['ymove'] = tup[8]             # Vertical speed (signed byte)
+    d['xaccel'] = tup[9]            # 
+    d['yaccel'] = tup[10]           # 
+    d['xcaccel'] = tup[11]          # Horizontal acceleration, more is less (signed byte)
+    d['ycaccel'] = tup[12]          # Vertical acceleration
     d['startx'] = tup[13]           # Pozycja startowa X (signed short)
     d['starty'] = tup[14]           # Pozycja startowa Y (signed short)
     d['startxc'] = tup[15]          # Prędkość startowa X (signed byte)
