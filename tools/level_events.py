@@ -134,12 +134,12 @@ def extract_spawn_events(events):
         spawn_data = {
             'dist': event['eventtime'],      # Punkt na mapie (scroll distance), w którym akcja się odpala
             'raw_event': event_type,         # Numer akcji (np. 6=spawn naziemny, 15=powietrzny)
-            'enemy_id': event['eventdat'],   # ID grafiki i zachowania przeciwnika
+            'enemy_id': event['eventdat'],   # ID 
             'x': event['eventdat2'],         # Pozycja pozioma (0-320)
             'y_vel': event['eventdat3'],     # Prędkość pionowa (lotu lub opadania)
             'y_offset': event['eventdat5'],  # Przesunięcie Y (pozwala na gęste ustawianie obiektów)
             'link_num': event['eventdat4'],  # ID grupy/formacji (eventlink)
-            'fixed_move_y': event['eventdat6'], # Stały ruch pionowy (niezależny od mapy)
+            'fixed_move_y': event['eventdat6'], # Stały ruch pionowy, razem ze scrollingiem tła 
         }
         
         # Map event type to spawn position
