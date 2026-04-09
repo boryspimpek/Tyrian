@@ -500,11 +500,10 @@ def extract_context_event(event):
 
 def process_events(events, header):
     """
-    Iteruje po wszystkich eventach poziomu, śledzi stan środowiska
-    (scrolling, tło) i wyodrębnia spawny oraz eventy kontekstowe.
+    Iteruje po wszystkich eventach poziomu chronologicznie, śledzi stan środowiska
+    i zapisuje wszystko w jednej wspólnej osi czasu (timeline).
     """
-    spawns   = []
-    contexts = []
+    timeline = []
 
     # Stan scrollingu — wartości domyślne z JE_main()
     back_move  = 1
@@ -516,39 +515,34 @@ def process_events(events, header):
     for event in events:
         etype = event['eventtype']
 
-        # --- Aktualizuj stan środowiska przed przetworzeniem spawnu ---
+        # --- Aktualizuj stan środowiska (zawsze przed przetworzeniem spawnu) ---
         if etype in (2, 30):
             back_move  = event['eventdat']
             back_move2 = event['eventdat2']
             back_move3 = event['eventdat3']
-
         elif etype == 3:
-            back_move  = 1
-            back_move2 = 1
-            back_move3 = 1
-
+            back_move, back_move2, back_move3 = 1, 1, 1
         elif etype == 65:
             background3x1 = (event['eventdat'] == 0)
-
         elif etype == 72:
             background3x1b = bool(event['eventdat'])
 
-        # --- Spawny ---
+        # --- Przetwarzanie i dodawanie do wspólnej listy ---
         if etype in SPAWN_EVENTS:
-            spawn = extract_spawn_event(
+            data = extract_spawn_event(
                 event, header,
                 back_move, back_move2, back_move3,
                 background3x1, background3x1b
             )
-            spawns.append(spawn)
+            data['category'] = 'spawn'  # Dodajemy kategorię dla rozróżnienia
+            timeline.append(data)
 
-        # --- Kontekst ---
         elif etype in CONTEXT_EVENTS:
-            ctx = extract_context_event(event)
-            contexts.append(ctx)
+            data = extract_context_event(event)
+            data['category'] = 'context' # Dodajemy kategorię dla rozróżnienia
+            timeline.append(data)
 
-    return spawns, contexts
-
+    return timeline
 
 # ---------------------------------------------------------------------------
 # Przetwarzanie pliku
@@ -581,20 +575,17 @@ def process_level_file(filename, level_num=None):
     for i in level_indices:
         try:
             events, header = read_level_events(filename, lvl_offsets[i])
-            spawns, contexts = process_events(events, header)
+            # Teraz dostajemy jedną listę zamiast dwóch
+            timeline = process_events(events, header)
 
             level_key = f"level_{i + 1}"
             results[level_key] = {
                 'header':         header,
                 'total_events':   len(events),
-                'spawn_count':    len(spawns),
-                'context_count':  len(contexts),
-                'spawns':         spawns,
-                'context_events': contexts,
+                'extracted_count': len(timeline),
+                'events':         timeline, # Jedna wspólna lista w JSON
             }
-            print(f"  Level {i + 1}: {len(events)} events, "
-                  f"{len(spawns)} spawns, {len(contexts)} context events")
-
+            print(f"  Level {i + 1}: {len(events)} events processed into timeline.")
         except Exception as e:
             print(f"Error processing level {i + 1}: {e}")
             import traceback; traceback.print_exc()
@@ -647,7 +638,7 @@ def main():
     results = process_level_file(lvl_file, level_num)
 
     if results:
-        output_file = resolve_path("events1.json")
+        output_file = resolve_path("events.json")
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
         print(f"\nResults saved to '{output_file}'")
