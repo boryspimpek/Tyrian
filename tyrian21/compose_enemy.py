@@ -433,11 +433,11 @@ def main():
     
     if len(sys.argv) < 2:
         print("Użycie:")
-        print("  python compose_enemy2.py <indeks>       - renderuj konkretnego wroga")
-        print("  python compose_enemy2.py --all          - renderuj wszystkich wrogów")
-        print("  python compose_enemy2.py --info <indeks> - pokaż informacje o wrogu")
-        print("  python compose_enemy2.py --analyze      - analizuj wszystkie shapebank")
-        print("  python compose_enemy2.py --check-tiles  - sprawdź czy wszystkie kafelki istnieją")
+        print("  python compose_enemy.py <indeks>       - renderuj konkretnego wroga")
+        print("  python compose_enemy.py --all          - renderuj wszystkich wrogów")
+        print("  python compose_enemy.py --info <indeks> - pokaż informacje o wrogu")
+        print("  python compose_enemy.py --analyze      - analizuj wszystkie shapebank")
+        print("  python compose_enemy.py --check-tiles  - sprawdź czy wszystkie kafelki istnieją")
         return
     
     command = sys.argv[1]

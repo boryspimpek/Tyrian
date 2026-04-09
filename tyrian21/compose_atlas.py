@@ -2,8 +2,8 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 
 # --- KONFIGURACJA ---
-SOURCE_FOLDER = "extracted_newsh9.shp"  # Zmień na folder, który chcesz zbadać
-OUTPUT_FILE = "atlas_newsh9.png"
+SOURCE_FOLDER = "extracted_newsh~.shp"  # Zmień na folder, który chcesz zbadać
+OUTPUT_FILE = "atlas.png"
 TILES_PER_ROW = 20  # Ile kafelków w jednym rzędzie atlasu
 TILE_W, TILE_H = 12, 14
 PADDING = 10  # Miejsce na tekst (indeks kafelka)
