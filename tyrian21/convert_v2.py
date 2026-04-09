@@ -99,4 +99,4 @@ def save_bmp(w, h, pixels, pal_path, name):
         out.write(palette)
         out.write(bmp_pixels)
 
-extract_any_shp("newsh~.shp", "palette.dat")
+extract_any_shp("newshu.shp", "palette.dat")
