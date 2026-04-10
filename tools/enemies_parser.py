@@ -10,13 +10,9 @@ def resolve_path(filename):
         return os.path.join(script_dir, filename)
     return filename
 
-# Liczba wrogów (850 zgodnie z ENEMY_NUM, ale często +1 jako pusty slot) [cite: 2]
+# Liczba wrogów w Tyrian (850 rekordów + 1 pusty)
 ENEMY_NUM = 851 
 
-# NOWY FORMAT (80 bajtów):
-# < - Little Endian
-# B/b (1 bajt), H/h (2 bajty)
-# egraphic zajmuje 40 bajtów (20 klatek * 2 bajty) 
 struct_fmt = "<B 3B 3B bbbbbb hh bb BB 20H B BB bb H b b B H h H"
 
 def unpack_enemy(data):
@@ -24,61 +20,66 @@ def unpack_enemy(data):
         tup = struct.unpack(struct_fmt, data)
         d = {}
         
-        # Podstawowe parametry 
+        # Podstawowe parametry
         d['ani'] = tup[0]
-        d['tur'] = list(tup[1:4])       # (down, right, left)? 24, 59, 115, 116, 144, 145, 146, 154 
-        d['freq'] = list(tup[4:7])      # values 20 - 120 
-        d['xmove'] = tup[7]             # aktualna predkość x, values 0
-        d['ymove'] = tup[8]             # aktualna prędkość y, values 0, 2
-        d['xaccel'] = tup[9]            # losowe przyspieszenie x, values 1, -1
-        d['yaccel'] = tup[10]           # losowe przyspieszenie y, values 1, -1
-        d['xcaccel'] = tup[11]          # stałe przyspieszeniex, values 0
-        d['ycaccel'] = tup[12]          # stałe przyspieszeniey, values 0
-        d['startx'] = tup[13]           # pozycja startowa x, values 0, 130
-        d['starty'] = tup[14]           # pozycja startowa y, values0, -13
-        d['startxc'] = tup[15]          # losowe odchylenie od startx, values 0, 125
-        d['startyc'] = tup[16]          # losowe odchylenie od starty, values 0   
-        d['armor'] = tup[17]            # 0 - 255 
-        d['esize'] = tup[18]            # esize=0 (1x1), esize=1 (2x2) 
+        d['tur'] = list(tup[1:4])
+        d['freq'] = list(tup[4:7])
+        d['xmove'] = tup[7]
+        d['ymove'] = tup[8]
+        d['xaccel'] = tup[9]
+        d['yaccel'] = tup[10]
+        d['xcaccel'] = tup[11]
+        d['ycaccel'] = tup[12]
+        d['startx'] = tup[13]
+        d['starty'] = tup[14]
+        d['startxc'] = tup[15]
+        d['startyc'] = tup[16]
+        d['armor'] = tup[17]
+        d['esize'] = tup[18]
         
-        # TWOJE KAFELKI (20 wartości 16-bitowych) [cite: 10]
-        # To tutaj znajdziesz te numery, z których składasz obraz
-        d['egraphic'] = list(tup[19:39]) 
+        # Grafika (40 bajtów - 20 wartości 16-bitowych)
+        d['egraphic'] = list(tup[19:39])
         
-        # Pola po grafice (przesunięte o 19 pozycji w krotce) 
+        # Pola po grafice
         d['explosiontype'] = tup[39]
-        d['animate'] = tup[40]          # values 0, 1, 2
-        d['shapebank'] = tup[41]        # values 8, 17, 20, 23
-        d['xrev'] = tup[42]             # 0
-        d['yrev'] = tup[43]             # 0
-        d['dgr'] = tup[44]              # values 2 - 207
-        d['dlevel'] = tup[45]           # values -1, 0 and 10
-        d['dani'] = tup[46]             # 0
-        d['elaunchfreq'] = tup[47]      # 0 for most enemies, 40 (271), 60 (539, 541)
-        d['elaunchtype'] = tup[48]      # 0 for most enemies, 463 (271), 543 (539), 544 (541)
-        d['value'] = tup[49]            # Punkty 
-        d['enemydie'] = tup[50]         # All 0 
+        d['animate'] = tup[40]
+        d['shapebank'] = tup[41]
+        d['xrev'] = tup[42]
+        d['yrev'] = tup[43]
+        d['dgr'] = tup[44]
+        d['dlevel'] = tup[45]
+        d['dani'] = tup[46]
+        d['elaunchfreq'] = tup[47]
+        d['elaunchtype'] = tup[48]
+        d['value'] = tup[49]
+        d['eenemydie'] = tup[50]
         
         return d
-    except struct.error:
+    except struct.error as e:
+        print(f"Błąd rozpakowywania: {e}")
         return None
 
 def parse_hdt_enemies(hdt_path, output_json):
     enemies_data = []
-    record_size = struct.calcsize(struct_fmt)
+    record_size = struct.calcsize(struct_fmt) # Powinno być dokładnie 80
+
+    hdt_path = resolve_path(hdt_path)
+    if not os.path.exists(hdt_path):
+        print(f"Błąd: Nie znaleziono pliku {hdt_path}")
+        return
 
     try:
         with open(hdt_path, "rb") as f:
             file_size = os.path.getsize(hdt_path)
-            # Tyrian przechowuje wrogów na końcu pliku .hdt 
+            # Przeciwnicy znajdują się na samym końcu pliku HDT
             enemy_start = file_size - (ENEMY_NUM * record_size)
             
             if enemy_start < 0:
-                print("Błąd: Obliczony offset jest ujemny. Sprawdź ENEMY_NUM.")
+                print("Błąd: Rozmiar pliku za mały dla podanej liczby wrogów.")
                 return
 
             f.seek(enemy_start)
-            print(f"Rozpoczynam czytanie z offsetu: {enemy_start}")
+            print(f"Parsowanie {ENEMY_NUM} przeciwników od offsetu {enemy_start}...")
 
             for i in range(ENEMY_NUM):
                 chunk = f.read(record_size)
@@ -94,11 +95,13 @@ def parse_hdt_enemies(hdt_path, output_json):
             json.dump(enemies_data, outf, indent=2, ensure_ascii=False)
         
         print(f"Sukces! Zapisano {len(enemies_data)} rekordów do {output_json}")
-        
+
     except Exception as e:
-        print(f"Błąd: {e}")
+        print(f"Wystąpił błąd: {e}")
 
 if __name__ == "__main__":
-    hdt_in = resolve_path("tyrian.hdt")
-    json_out = resolve_path("enemy.json")
-    parse_hdt_enemies(hdt_in, json_out)
+    # Użycie: python enemies_parser.py tyrian.hdt enemies.json
+    hdt_input = sys.argv[1] if len(sys.argv) > 1 else "tyrian.hdt"
+    json_output = sys.argv[2] if len(sys.argv) > 2 else "enemies.json"
+    
+    parse_hdt_enemies(hdt_input, json_output)
