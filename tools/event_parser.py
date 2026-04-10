@@ -638,7 +638,7 @@ def main():
     results = process_level_file(lvl_file, level_num)
 
     if results:
-        output_file = resolve_path("lvl3.json")
+        output_file = resolve_path("lvl1.json")
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
         print(f"\nResults saved to '{output_file}'")
