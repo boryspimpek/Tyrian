@@ -4,10 +4,10 @@ Level Event Extractor for Tyrian
 Extracts enemy spawn sequences and gameplay-relevant context events from .lvl binary files.
 
 Usage:
-    python level_events.py                          # tyrian1.lvl, level 1
-    python level_events.py tyrian2.lvl              # tyrian2.lvl, level 1
-    python level_events.py tyrian1.lvl 3            # tyrian1.lvl, level 3
-    python level_events.py tyrian1.lvl --all        # wszystkie poziomy
+    python event_parser.py                          # tyrian1.lvl, level 1
+    python event_parser.py tyrian2.lvl              # tyrian2.lvl, level 1
+    python event_parser.py tyrian1.lvl 3            # tyrian1.lvl, level 3
+    python event_parser.py tyrian1.lvl --all        # wszystkie poziomy
 """
 
 import struct
@@ -638,7 +638,7 @@ def main():
     results = process_level_file(lvl_file, level_num)
 
     if results:
-        output_file = resolve_path("lvl2.json")
+        output_file = resolve_path("lvl3.json")
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
         print(f"\nResults saved to '{output_file}'")
