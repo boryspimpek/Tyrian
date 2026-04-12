@@ -8,7 +8,7 @@ from PIL import Image
 
 BASE_TILES_DIR = "."
 OUTPUT_PATH = "enemy_lvl1"
-JSON_FILE = "enemy.json"
+JSON_FILE = "enemies.json"
 
 TILE_W, TILE_H = 12, 14
 

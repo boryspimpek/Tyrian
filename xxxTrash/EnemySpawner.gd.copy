@@ -1,0 +1,521 @@
+extends Node2D
+
+@export var events_file: String = "res://data/simple_events.json"
+@export var enemies_file: String = "res://data/simple_enemies.json"
+
+# Stałe z Tyrian
+const TYRIAN_FPS = 30.0
+const PIXEL_SCALE = 1.0  # Skala pikseli (opcjonalnie do dostosowania)
+
+# Aktualne prędkości scrollingu (z eventu type 2)
+var back_move: int = 2    # Tło 1 (Ground)
+var back_move2: int = 4   # Tło 2 (Sky)
+var back_move3: int = 0   # Tło 3 (Top)
+
+# Referencje
+var background: ParallaxBackground
+var enemies_data: Array = []
+var level_events: Array = []
+var current_event_index: int = 0
+
+# Śledzenie pozycji levelu (symulacja "dist" z Tyrian)
+var level_distance: float = 0.0
+var last_processed_dist: int = -1
+
+func _ready():
+	background = get_node_or_null("../Background")
+	load_enemies_data()
+	load_events_data()
+
+
+	# Testowe wymuszenie spawnu po 2 sekundach
+	get_tree().create_timer(2.0).timeout.connect(func(): 
+		print("TEST: Wymuszam spawn pierwszego eventu")
+		if level_events.size() > 0:
+			process_event(level_events[0])
+	)
+
+func _process(delta):
+	# Aktualizacja dystansu levelu (symulacja scrollowania)
+	level_distance += back_move2 * TYRIAN_FPS * delta
+	
+	# Przetwarzanie eventów dla aktualnego dystansu
+	process_events_for_distance(int(level_distance))
+	
+	# if Engine.get_frames_drawn() % 60 == 0:
+	# 	print("DEBUG: dist=", int(level_distance), " next_event_dist=", 
+	# 		level_events[current_event_index]["dist"] if current_event_index < level_events.size() else "NONE")
+
+func load_enemies_data():
+	var file = FileAccess.open(enemies_file, FileAccess.READ)
+	if file:
+		var json = JSON.new()
+		var error = json.parse(file.get_as_text())
+		if error == OK:
+			enemies_data = json.get_data()
+			print("Załadowano ", enemies_data.size(), " przeciwników")
+		else:
+			push_error("Błąd parsowania JSON przeciwników: " + str(error))
+		file.close()
+	else:
+		push_error("Nie można otworzyć pliku: " + enemies_file)
+
+func load_events_data():
+	var file = FileAccess.open(events_file, FileAccess.READ)
+	if file:
+		var json = JSON.new()
+		var error = json.parse(file.get_as_text())
+		if error == OK:
+			var data = json.get_data()
+			if data.has("level_1") and data["level_1"].has("events"):
+				level_events = data["level_1"]["events"]
+				# Sortuj eventy po dist
+				level_events.sort_custom(func(a, b): return a["dist"] < b["dist"])
+				print("Załadowano ", level_events.size(), " eventów")
+		else:
+			push_error("Błąd parsowania JSON eventów: " + str(error))
+		file.close()
+	else:
+		push_error("Nie można otworzyć pliku: " + events_file)
+
+func process_events_for_distance(dist: int):
+	while current_event_index < level_events.size():
+		var event = level_events[current_event_index]
+		if event["dist"] > dist:
+			break
+		
+		print("DEBUG: DIST REACHED! Processing event at index ", current_event_index, " event_dist=", event["dist"])
+		# Przetwórz event
+		process_event(event)
+		current_event_index += 1
+
+func process_event(event: Dictionary):
+	var event_type = int(event["event_type"])
+	var event_name = event.get("event_name", "unknown")
+	print("DEBUG: process_event type=", event_type, " name=", event_name)
+	
+	match event_type:
+		2:  # scroll_speed - ustaw prędkość scrollingu
+			set_scroll_speed(event)
+		6, 15, 17, 18:  # spawn_enemy
+			spawn_enemy(event)
+		12:  # spawn_4x4_ground
+			spawn_4x4_enemies(event)
+		_:
+			# Inne eventy - można dodać obsługę w przyszłości
+			pass
+
+func set_scroll_speed(event: Dictionary):
+	"""Ustawia prędkość scrollingu tła (event type 2)"""
+	back_move = event.get("back_move", back_move)
+	back_move2 = event.get("back_move2", back_move2)
+	back_move3 = event.get("back_move3", back_move3)
+	
+	# Aktualizacja prędkości w Background.gd
+	if background and background.has_method("set_scroll_speed"):
+		background.set_scroll_speed(back_move, back_move2, back_move3)
+	
+	print("Scroll speed ustawiony: back_move=", back_move, 
+		  " back_move2=", back_move2, " back_move3=", back_move3)
+
+func spawn_enemy(event: Dictionary):
+	"""Spawnuje pojedynczego przeciwnika"""
+	var enemy_id_raw = event.get("enemy_id", 0)
+	print("DEBUG: spawn_enemy START - looking for enemy_id_raw=", enemy_id_raw)
+	
+	# Znajdź przeciwnika po polu 'index' w enemies_data, bo to nie jest indeks tablicy!
+	var enemy_template = null
+	for template in enemies_data:
+		if int(template.get("index", -1)) == int(enemy_id_raw):
+			enemy_template = template
+			break
+	
+	if enemy_template == null:
+		print("ERROR: Nie znaleziono przeciwnika o index=", enemy_id_raw, " w bazie (dostępne ", enemies_data.size(), " typów)")
+		return
+	
+	var enemy_id = int(enemy_template.get("index", 0))
+	
+	# Pozycja z eventu
+	var spawn_x = event.get("screen_x", 0)
+	var spawn_y = event.get("screen_y", -50)  # Domyślnie nad ekranem
+	
+	# Przeskalowanie współrzędnych Tyrian (320x200) do Godot (1280x720)
+	# Zachowujemy proporcje dla X, a Y przesuwamy aby spawn był nad ekranem
+	spawn_x = spawn_x * (1280.0 / 320.0)
+	spawn_y = spawn_y * (720.0 / 200.0)
+	
+	# Korekta Y zgodnie z dokumentacją Tyrian
+	var y_offset = event.get("y_offset", 0)
+	var enemy_slot = event.get("enemy_slot", 0)
+	
+	# Dodaj przesunięcie w zależności od slotu (hierarchia ruchu z dokumentacji)
+	match enemy_slot:
+		0:   # Sky
+			spawn_y -= back_move2
+		25, 75:  # Ground
+			spawn_y -= back_move
+		50:  # Top
+			spawn_y -= back_move3
+	
+	spawn_y += y_offset
+	
+	# Prędkość przeciwnika (hierarchia ruchu z dokumentacji)
+	var y_vel = event.get("y_vel", 0)
+	var ymove = enemy_template.get("ymove", 0)
+	var final_velocity_y = ymove + y_vel
+	
+	# Stały ruch Y (fixed_move_y)
+	var fixed_move_y = event.get("fixed_move_y", 0)
+	
+	# Prędkość pozioma
+	var xmove = enemy_template.get("xmove", 0)
+	
+	# Skalowanie prędkości (x4 dla X, x3.6 dla Y)
+	var scaled_vel = Vector2(xmove * 4.0, final_velocity_y * 3.6)
+	
+	# Hierarchia ruchu: prędkość scrollowania zależy od slotu
+	var scroll_speed_for_slot = back_move2  # Domyślnie Sky
+	match enemy_slot:
+		0:   # Sky - najszybszy
+			scroll_speed_for_slot = back_move2
+		25, 75:  # Ground - średni
+			scroll_speed_for_slot = back_move
+		50:  # Top - wolny/brak
+			scroll_speed_for_slot = back_move3
+	
+	print("DEBUG: Spawning enemy_id=", enemy_id, 
+		"\n  - Tyrian pos: (", event.get("screen_x", 0), ",", event.get("screen_y", -50), ")",
+		"\n  - Godot pos: (", spawn_x, ",", spawn_y, ")",
+		"\n  - Tyrian vel: (", xmove, ",", final_velocity_y, ")",
+		"\n  - Godot vel: ", scaled_vel, 
+		"\n  - Slot: ", enemy_slot,
+		"\n  - ScrollSpeed: ", scroll_speed_for_slot)
+	
+	# Stwórz przeciwnika - przekaż odpowiednią prędkość scrollowania dla slota
+	var enemy = create_enemy_node(enemy_template,
+		Vector2(spawn_x, spawn_y),
+		scaled_vel,
+		fixed_move_y, enemy_id, scroll_speed_for_slot)
+
+	if enemy:
+		get_parent().add_child(enemy)
+		print("Zespawnowano wroga #", enemy_id, " na pozycji (", spawn_x, ",", spawn_y,
+			") z prędkością (", xmove, ",", final_velocity_y, ")")
+
+func spawn_4x4_enemies(event: Dictionary):
+	"""Spawnuje 4 wrogów w układzie 2x2 (event type 12)"""
+	var enemy_ids = event.get("enemy_ids", [])
+	print("DEBUG: spawn_4x4 START - ids=", enemy_ids)
+	
+	var base_x = event.get("screen_x", 0)
+	var base_y = event.get("screen_y", -50)
+	
+	# Przeskalowanie współrzędnych Tyrian (320x200) do Godot (1280x720)
+	base_x = base_x * (1280.0 / 320.0)
+	base_y = base_y * (720.0 / 200.0)
+	
+	var y_offset = event.get("y_offset", 0)
+	var y_vel = event.get("y_vel", 0)
+	var enemy_slot = event.get("enemy_slot", 25)
+	var fixed_move_y = event.get("fixed_move_y", 0)
+	var link_num = event.get("link_num", 0)
+	
+	# Korekta Y zgodnie z dokumentacją Tyrian
+	match int(enemy_slot):
+		0:
+			base_y -= back_move2
+		25, 75:
+			base_y -= back_move
+		50:
+			base_y -= back_move3
+	
+	base_y += y_offset
+	
+	# Hierarchia ruchu: prędkość scrollowania zależy od slotu
+	var scroll_speed_for_slot = back_move2  # Domyślnie Sky
+	match int(enemy_slot):
+		0:   # Sky - najszybszy
+			scroll_speed_for_slot = back_move2
+		25, 75:  # Ground - średni
+			scroll_speed_for_slot = back_move
+		50:  # Top - wolny/brak
+			scroll_speed_for_slot = back_move3
+	
+	# Offsety dla układu 2x2 (zgodnie z dokumentacją: 24px x 28px)
+	var offsets = [
+		Vector2(0, 0),
+		Vector2(24, 0),
+		Vector2(0, 28),
+		Vector2(24, 28)
+	]
+	
+	for i in range(4):
+		var enemy_id_raw = enemy_ids[i]
+		
+		# Szukaj szablonu po 'index'
+		var enemy_template = null
+		for template in enemies_data:
+			if int(template.get("index", -1)) == int(enemy_id_raw):
+				enemy_template = template
+				break
+		
+		if enemy_template == null:
+			continue
+		
+		var spawn_pos = Vector2(base_x, base_y) + (offsets[i] * Vector2(4.0, 3.6)) # Skalujemy też offsety 2x2
+
+		var ymove = enemy_template.get("ymove", 0)
+		var final_velocity_y = ymove + y_vel
+		var xmove = enemy_template.get("xmove", 0)
+		
+		var scaled_vel = Vector2(xmove * 4.0, final_velocity_y * 3.6)
+		
+		print("DEBUG: Spawning 4x4 element ", i, " enemy_id=", enemy_id_raw, " pos=", spawn_pos, " vel=", scaled_vel, " scroll=", scroll_speed_for_slot)
+
+		var enemy = create_enemy_node(enemy_template, spawn_pos,
+			scaled_vel, fixed_move_y, int(enemy_id_raw), scroll_speed_for_slot)
+
+		if enemy:
+			get_parent().add_child(enemy)
+
+func create_enemy_node(template: Dictionary, position: Vector2,
+					  velocity: Vector2, fixed_move_y: int, enemy_id: int = 0, current_back_move2: int = 4) -> Node2D:
+	"""Tworzy węzeł przeciwnika jako prosty kolorowy znacznik (tymczasowo)"""
+	var enemy = Node2D.new()
+	enemy.name = "Enemy_%d" % enemy_id
+	enemy.global_position = position
+
+	# Kolory na podstawie enemy_id dla łatwiejszego rozróżniania
+	var colors = [
+		Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW,
+		Color.CYAN, Color.MAGENTA, Color.ORANGE, Color.PURPLE
+	]
+	var enemy_color = colors[enemy_id % colors.size()]
+
+	# Stwórz kolorowe kółko (Polygon2D) jako placeholder
+	var circle = Polygon2D.new()
+	circle.name = "Visual"
+	circle.color = enemy_color
+	# Generuj okrąg z 16 punktów
+	var points = PackedVector2Array()
+	var radius = 12.0  # Promień kółka
+	for i in range(16):
+		var angle = i * TAU / 16.0
+		points.append(Vector2(cos(angle), sin(angle)) * radius)
+	circle.polygon = points
+	circle.z_index = 100 # Upewnijmy się, że jest na wierzchu
+	enemy.add_child(circle)
+
+	# Dodaj Label z ID dla debugowania
+	var label = Label.new()
+	label.name = "DebugLabel"
+	label.text = str(enemy_id)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.position = Vector2(-10, -10)
+	label.size = Vector2(20, 20)
+	label.add_theme_font_size_override("font_size", 10)
+	enemy.add_child(label)
+
+	# Dodaj prostą kolizję (opcjonalnie)
+	var collision = CollisionShape2D.new()
+	var circle_shape = CircleShape2D.new()
+	circle_shape.radius = radius
+	collision.shape = circle_shape
+	enemy.add_child(collision)
+
+	# Dodaj skrypt obsługi przeciwnika
+	var enemy_script = GDScript.new()
+	enemy_script.source_code = generate_enemy_script(template, velocity, fixed_move_y, current_back_move2)
+	enemy_script.reload()
+	enemy.set_script(enemy_script)
+	enemy.z_index = 100 # Cały wróg na wierzchu
+	
+	return enemy
+
+func get_enemy_texture_path(shapebank: int, graphic_id: int) -> String:
+	"""Zwraca ścieżkę do tekstury przeciwnika"""
+	# Tymczasowo - zakładamy że tekstury są w assets/
+	# Docelowo powinno być mapowanie shapebank -> plik .shp
+	return "res://assets/enemy_%d_%d.png" % [shapebank, graphic_id]
+
+func generate_enemy_script(template: Dictionary, velocity: Vector2, 
+						   fixed_move_y: int, current_back_move2: int) -> String:
+	"""Generuje skrypt dla przeciwnika na podstawie szablonu"""
+	
+	var armor = template.get("armor", 1)
+	var esize = template.get("esize", 0)
+	var animate = template.get("animate", 0)
+	var ani = template.get("ani", 1)
+	
+	# Parametry ruchu wahadłowego
+	var xcaccel = template.get("xcaccel", 0)
+	var ycaccel = template.get("ycaccel", 0)
+	var xrev = template.get("xrev", 0)
+	var yrev = template.get("yrev", 0)
+	
+	var xaccel = template.get("xaccel", 0)
+	var yaccel = template.get("yaccel", 0)
+	
+	var script_template = """extends Node2D
+
+# Statystyki
+var armor: int = {armor}
+var esize: int = {esize}
+
+# Prędkość
+var velocity: Vector2 = Vector2({vel_x}, {vel_y})
+var fixed_move_y: int = {fixed_y}
+
+# Parametry ruchu wahadłowego (silnik stałego przyspieszenia)
+var excc: int = {xcaccel}
+var eycc: int = {ycaccel}
+var exrev: int = {xrev}
+var eyrev: int = {yrev}
+var exccw: int = 0
+var eyccw: int = 0
+var exccwmax: int = 0
+var eyccwmax: int = 0
+var exccadd: int = 1
+var eyccadd: int = 1
+
+# Parametry losowego przyspieszenia
+var xaccel: int = {xaccel}
+var yaccel: int = {yaccel}
+
+# Animacja
+var animate_mode: int = {animate}
+var ani: int = {ani}
+var enemycycle: int = 0
+var animin: int = 0
+var aniactive: int = 0
+var animax: int = 0
+var aniwhenfire: int = 0
+
+# Granice ekranu (do usuwania)
+const BOUNDS_LEFT = -200
+const BOUNDS_RIGHT = 1480
+const BOUNDS_TOP = -200
+const BOUNDS_BOTTOM = 920
+
+func _ready():
+	# Inicjalizacja silnika wahadłowego
+	if excc != 0:
+		exccw = abs(excc)
+		exccwmax = exccw
+		exccadd = 1 if excc > 0 else -1
+		if exrev == 0:
+			exrev = 100
+	
+	if eycc != 0:
+		eyccw = abs(eycc)
+		eyccwmax = eyccw
+		eyccadd = 1 if eycc > 0 else -1
+		if eyrev == 0:
+			eyrev = 100
+	
+	# Inicjalizacja animacji
+	enemycycle = 0
+	match animate_mode:
+		0:  # Brak animacji
+			aniactive = 0
+			animin = 0
+			enemycycle = 1
+		1:  # Zawsze aktywna
+			aniactive = 1
+			animin = 0
+			enemycycle = 0
+		2:  # Tylko przy strzale
+			aniactive = 2
+			animin = 0
+			animax = ani
+			enemycycle = 1
+			aniwhenfire = 2
+
+func _process(delta):
+	# 1. Ruch stały (fixed_move_y) - niezależny od fizyki
+	position.y += float(fixed_move_y) * delta * 30.0
+	
+	# 2. Aktualizacja silnika wahadłowego X
+	if excc != 0:
+		exccw -= 1
+		if exccw <= 0:
+			velocity.x += exccadd
+			exccw = exccwmax
+			if velocity.x == exrev:
+				excc = -excc
+				exrev = -exrev
+				exccadd = -exccadd
+	
+	# 3. Aktualizacja silnika wahadłowego Y
+	if eycc != 0:
+		eyccw -= 1
+		if eyccw <= 0:
+			velocity.y += eyccadd
+			eyccw = eyccwmax
+			if velocity.y == eyrev:
+				eycc = -eycc
+				eyrev = -eyrev
+				eyccadd = -eyccadd
+	
+	# 4. Ruch fizyczny
+	# Prędkość w Godot (skalowana z Tyrian 30 FPS)
+	var scaled_vel = Vector2(velocity.x * 4.0, velocity.y * 3.6)
+	
+	# Tyrian scroll effect: enemies should move down with the background
+	# Używamy aktualnej wartości back_move2 przekazanej przy spawnie
+	var scroll_vel_y = {back_move2} * 3.6 
+	
+	# Całkowite przesunięcie w pikselach na sekundę
+	var total_vel_to_apply = (scaled_vel + Vector2(0, scroll_vel_y)) * 30.0
+	
+	# DEBUG co sekundę - uproszczone logowanie
+	if Engine.get_frames_drawn() % 60 == 0:
+		print("DEBUG: ", name, " | Pos: ", Vector2i(position), " | Vel: ", Vector2i(total_vel_to_apply))
+	
+	position += total_vel_to_apply * delta
+	
+	# 5. Usuń jeśli poza ekranem
+	if position.x < BOUNDS_LEFT or position.x > BOUNDS_RIGHT:
+		queue_free()
+	if position.y < BOUNDS_TOP or position.y > BOUNDS_BOTTOM:
+		queue_free()
+	
+	# 6. Aktualizacja animacji
+	if aniactive > 0:
+		enemycycle += 1
+		if enemycycle > ani:
+			enemycycle = animin
+		update_animation()
+
+func update_animation():
+	# TODO: Aktualizacja klatki animacji na podstawie enemycycle
+	pass
+
+func take_damage(damage: int):
+	armor -= damage
+	if armor <= 0:
+		explode()
+
+func explode():
+	# TODO: Efekt eksplozji
+	queue_free()
+"""
+
+	return script_template.format({
+		"armor": armor,
+		"esize": esize,
+		"vel_x": velocity.x,
+		"vel_y": velocity.y,
+		"fixed_y": fixed_move_y,
+		"xcaccel": xcaccel,
+		"ycaccel": ycaccel,
+		"xrev": xrev,
+		"yrev": yrev,
+		"xaccel": xaccel,
+		"yaccel": yaccel,
+		"animate": animate,
+		"ani": ani,
+		"back_move2": current_back_move2
+	})

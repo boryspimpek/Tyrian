@@ -638,10 +638,13 @@ def main():
     results = process_level_file(lvl_file, level_num)
 
     if results:
-        output_file = resolve_path("lvl1.json")
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
-        print(f"\nResults saved to '{output_file}'")
+        for level_key, level_data in results.items():
+            level_num_from_key = level_key.replace('level_', '')
+            output_data = {f"lvl_{level_num_from_key}": level_data}
+            output_file = resolve_path(f"lvl{level_num_from_key}.json")
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(output_data, f, indent=2, ensure_ascii=False)
+            print(f"  Level {level_num_from_key} saved to '{output_file}'")
 
 
 if __name__ == "__main__":
