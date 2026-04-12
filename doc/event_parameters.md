@@ -891,6 +891,92 @@ eventtype = 33, eventdat = 200, eventdat4 = 1
 
 ---
 
+### Event 60 — Assign Special Enemy
+
+Oznacza wrogów z danej grupy jako „specjalnych", ustawiając im hook który przy śmierci wpisuje wartość do globalnej tablicy flag. **Nie powoduje żadnego natychmiastowego efektu** — modyfikuje jedynie pola `special`, `flagnum` i `setto` żyjących wrogów.
+
+| Pole | Zmienna wroga | Działanie |
+|------|---------------|-----------|
+| `eventdat`  | `flagnum` | Numer globalnej flagi do ustawienia przy śmierci (1-based) |
+| `eventdat2` | `setto`   | Wartość wpisywana do flagi: `1` → `true`, inne → `false` |
+| `eventdat4` | filtr `linknum` | Numer grupy wrogów do oznaczenia |
+
+### Mechanika działania
+
+**1. Gdy event się odpala:**
+```c
+for (temp = 0; temp < 100; temp++)
+{
+    if (enemy[temp].linknum == eventRec[eventLoc-1].eventdat4)
+    {
+        enemy[temp].special = true;
+        enemy[temp].flagnum = eventRec[eventLoc-1].eventdat;
+        enemy[temp].setto   = (eventRec[eventLoc-1].eventdat2 == 1);
+    }
+}
+```
+Event przegląda wszystkich 100 slotów wrogów i dla każdego z `linknum == eventdat4` ustawia flagę `special = true` oraz zapamiętuje numer flagi i docelową wartość.
+
+**2. Gdy oznaczony wróg umiera:**
+```c
+if (enemy[temp2].special)
+{
+    globalFlags[enemy[temp2].flagnum - 1] = enemy[temp2].setto;
+}
+```
+Przy destrukcji wroga (wewnątrz pętli obsługi kolizji/śmierci) silnik sprawdza flagę `special`. Jeśli jest ustawiona, wpisuje `setto` do `globalFlags[flagnum - 1]`.
+
+### Pola wroga — szczegóły
+
+| Pole | Typ | Znaczenie |
+|------|-----|-----------|
+| `special` | `bool` | Czy wróg ma aktywny hook na flagę globalną |
+| `flagnum` | `int` | Indeks (1-based) w tablicy `globalFlags` |
+| `setto`   | `bool` | Wartość wpisywana do flagi (`true`/`false`) |
+
+> **`flagnum` jest 1-based** — kod używa `globalFlags[flagnum - 1]`, więc wartość `1` odpowiada `globalFlags[0]`.
+
+### Relacja z globalFlags i eventem 61
+
+Event 60 jest naturalnym partnerem eventu 61, który odczytuje te same flagi:
+
+```c
+// Event 61 — jeśli flaga ma daną wartość, przeskocz eventy
+if (globalFlags[eventdat - 1] == eventdat2)
+    eventLoc += eventdat3;
+```
+
+Typowy wzorzec: event 60 ustawia flagę przy śmierci bossa → event 61 wykrywa to i pomija dalsze eventy (np. pomija kolejną falę wrogów lub wyzwala scenę).
+
+### Typowe zastosowania
+
+**1. Boss który po śmierci odblokowuje postęp:**
+```
+# Spawn bossa z linknum = 5
+eventtype = 15, linknum = 5, enemy_id = 300
+
+# Przy śmierci bossa ustaw globalFlags[0] = true
+eventtype = 60, eventdat = 1, eventdat2 = 1, eventdat4 = 5
+
+# Jeśli flaga 1 == true, pomiń 3 kolejne eventy
+eventtype = 61, eventdat = 1, eventdat2 = 1, eventdat3 = 3
+```
+
+**2. Oznaczenie wielu wrogów naraz:**
+```
+# Wrogowie z linknum = 10 — każdy przy śmierci ustawi flagę 2 na false
+eventtype = 60, eventdat = 2, eventdat2 = 0, eventdat4 = 10
+```
+
+### Ograniczenia
+
+- **Filtr tylko po `linknum`** — nie można ograniczyć do pojedynczego wroga inaczej niż przez unikalny `linknum`
+- **Brak filtra `linknum == 0`** — wrogowie z `linknum = 0` (domyślnym) nie są pomijani, dlatego event 60 z `eventdat4 = 0` oznaczy wszystkich wrogów z `linknum = 0`
+- **Nadpisywanie** — kolejne wywołania eventu 60 na tej samej grupie nadpiszą wcześniejsze wartości `flagnum` i `setto`
+- **Pętla 100 slotów** — event zawsze sprawdza dokładnie sloty `0`–`99` (stała `100`), niezależnie od aktualnie żyjących wrogów
+
+---
+
 ### Tabela pozostałych eventów globalnych
 
 | Type | Pole(a) | Efekt |
@@ -900,7 +986,7 @@ eventtype = 33, eventdat = 200, eventdat4 = 1
 | 39 | `eventdat`=stary linknum, `eventdat2`=nowy | Przenieś wrogów między grupami |
 | 47 | `eventdat`=HP, `eventdat4`=group | Jak 25, bez trybu galaga |
 | 55 | `eventdat`=xaccel, `eventdat2`=yaccel, `eventdat4`=group | Zmień parametr losowego przyspieszenia |
-| 60 | `eventdat`=flagnum, `eventdat2`=wartość, `eventdat4`=group | Oznacz wroga jako specjalny (globalne flagi) |
+| 60 | `eventdat`=flagnum (1-based), `eventdat2`=wartość (1=true), `eventdat4`=linknum | Oznacz grupę wrogów jako specjalną — przy śmierci każdego wpisują wartość do `globalFlags[flagnum-1]` |
 
 ---
 
