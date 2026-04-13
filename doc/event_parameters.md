@@ -977,6 +977,116 @@ eventtype = 60, eventdat = 2, eventdat2 = 0, eventdat4 = 10
 
 ---
 
+### Event 7 — Top Enemy
+
+Spawns enemy in the Top slot (enemyOffset=50), which corresponds to the third background layer. Enemies spawned with this event appear from the top of the screen and scroll with `backMove3`.
+
+| Pole | Zmienna | Działanie |
+|------|---------|-----------|
+| eventdat  | `enemy_id` | ID przeciwnika w bazie danych (`enemyDat`) |
+| eventdat2 | `x` | Pozycja X spawnu; `-99` = nie modyfikuj X (użyj danych wroga) |
+| eventdat3 | `y_vel` | Modyfikator prędkości pionowej; dodawany do `eyc` |
+| eventdat4 | `link_num` | Numer grupy/formacji (`linknum`) |
+| eventdat5 | `y_offset` | Korekta pozycji startowej Y |
+| eventdat6 | `fixed_move_y` | Stały ruch pionowy niezależny od fizyki |
+
+### Mechanika działania
+
+Event 7 wywołuje `JE_createNewEventEnemy(0, 50, 0)`, gdzie drugi parametr `50` oznacza slot Top (tło 3).
+
+**1. Obliczenie pozycji X (gdy `eventdat2 != -99`):**
+
+```c
+if (background3x1)
+    enemy.ex = eventdat2 - (mapX - 1) * 24 - 12;
+else
+    enemy.ex = eventdat2 - mapX3 * 24 - 24 * 2 + 6;
+
+if (background3x1b)
+    enemy.ex -= 6;
+```
+
+- **`background3x1 = true`:** Tło 3 jest złożone z jednego warstwy, używa wzoru jak Ground/Ground2
+- **`background3x1 = false`:** Tło 3 jest niezłożone, używa specjalnego wzoru z `mapX3`
+- **`background3x1b = true`:** Dodatkowa korekta `-6` do pozycji X
+
+**2. Obliczenie pozycji Y (gdy `eventdat2 != -99`):**
+
+```c
+enemy.ey = -28;
+enemy.ey -= backMove3;  // scrolling tła 3
+
+if (background3x1b && enemyOffset == 50)
+    enemy.ey += 4;  // korekta do -24
+
+enemy.ey += eventdat5;  // y_offset
+```
+
+Bazowa pozycja to `-28`, odjęcie `backMove3` (domyślnie 3) daje `-31`. Gdy `background3x1b = true`, pozycja startowa to `-24`.
+
+**3. Inicjalizacja pozostałych pól (zawsze):**
+
+```c
+enemy.eyc += eventdat3;      // y_vel
+enemy.linknum = eventdat4;   // link_num
+enemy.fixedmovey = eventdat6; // fixed_move_y
+```
+
+### Wpływ flag tła
+
+| Flaga | Efekt na pozycję X |
+|-------|-------------------|
+| `background3x1` | Zmienia wzór X na bardziej standardowy |
+| `background3x1b` | Korekta X o `-6` oraz Y z `-28` na `-24` |
+
+### Typowe zastosowania
+
+**1. Wróg z tła trzeciego planu:**
+```json
+{
+  "event_type": 7,
+  "enemy_id": 150,
+  "x": 160,
+  "y_offset": 0,
+  "link_num": 5
+}
+```
+Wróg ID 150 spawnuje na środku ekranu (X=160) w slotcie Top, z góry ekranu.
+
+**2. Formacja w tle trzecim planu:**
+```json
+{
+  "event_type": 7,
+  "enemy_id": 151,
+  "x": 80,
+  "y_offset": 10,
+  "link_num": 10
+}
+```
+Wrogowie z `link_num=10` tworzą formację w tle 3, pozycja Y skorygowana o +10.
+
+**3. Wróg ze stałym ruchem w dół:**
+```json
+{
+  "event_type": 7,
+  "enemy_id": 152,
+  "x": 200,
+  "y_vel": 2,
+  "fixed_move_y": 1,
+  "link_num": 0
+}
+```
+Wróg porusza się w dół zarówno przez prędkość fizyczną (`y_vel=2`) jak i stały ruch (`fixed_move_y=1`).
+
+### Ograniczenia
+
+- **Slot Top:** Wrogowie zawsze trafiają do slotu 50 (indeksy 50–74)
+- **Scrolling:** Pozycja Y jest korygowana o `backMove3` (scrolling tła 3)
+- **Flagi tła:** `background3x1` i `background3x1b` znacząco wpływają na pozycję X
+- **Limit 25 wrogów:** Maksymalnie 25 wrogów w jednym momencie w slotcie Top
+
+---
+
 ### Tabela pozostałych eventów globalnych
 
 | Type | Pole(a) | Efekt |
