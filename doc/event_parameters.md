@@ -1150,39 +1150,68 @@ Te eventy kontrolują system losowego spawnu wrogów, który jest niezależny od
 Losowy spawn jest sprawdzany w każdej klatce w `JE_drawEnemy`:
 
 ```c
+/* New Enemy */
 if (enemiesActive && mt_rand() % 100 > levelEnemyFrequency)
-{
-    tempW = levelEnemy[mt_rand() % levelEnemyMax];
-    b = JE_newEnemy(0, tempW, 0);  // spawn do slotu 0 (Sky)
-}
 ```
 
 **Parametry losowego spawnu:**
-- `enemiesActive` - czy losowy spawn jest włączony (Event 13/14)
-- `levelEnemyFrequency` - częstotliwość spawnu (0 = zawsze, 99 = rzadko, domyślnie 96)
-- `levelEnemy[40]` - tablica ID wrogów do losowego spawnu (ładowana z pliku `.lvl`)
-- `levelEnemyMax` - liczba wrogów w tablicy (maksimum 40, ładowana z pliku `.lvl`)
+- `enemiesActive` — czy losowy spawn jest włączony (Event 13/14)
+- `levelEnemyFrequency` — częstotliwość spawnu (typ `JE_word` / `uint16_t`; 0 = zawsze, 99 = rzadko, domyślnie 96)
+- `levelEnemy[40]` — tablica ID wrogów do losowego spawnu (ładowana z pliku `.lvl`)
+- `levelEnemyMax` — liczba wrogów w tablicy (maksimum 40, ładowana z pliku `.lvl`)
 
 Tablica `levelEnemy` jest ładowana z nagłówka pliku `.lvl` podczas ładowania poziomu:
+
 ```c
 fread_u16_die(&levelEnemyMax, 1, level_f);        // liczba wrogów
 fread_u16_die(levelEnemy, levelEnemyMax, level_f); // tablica ID wrogów
 ```
 
 **Event 37** ustawia `levelEnemyFrequency`:
+
 ```c
 case 37:
-    levelEnemyFrequency = eventdat;
+    levelEnemyFrequency = eventRec[eventLoc-1].eventdat;
     break;
 ```
 
+> ⚠️ **Uwaga:** `levelEnemyFrequency` jest typu `JE_word` (`uint16_t`), natomiast `eventdat` jest `Sint16`. Przypisanie ujemnej wartości `eventdat` da w efekcie bardzo dużą liczbę bez znaku, co sprawi, że warunek `mt_rand() % 100 > levelEnemyFrequency` będzie zawsze fałszywy — spawn zostanie praktycznie wyłączony.
+
 ### Domyślne wartości
 
-Przy ładowaniu poziomu:
+Przy ładowaniu poziomu (`JE_main`):
+Spawn następuje gdy losowa liczba z zakresu 0–99 jest większa niż levelEnemyFrequency. Przy domyślnej wartości 96 (tylko 97, 98 lub 99 spełniają warunek).
 ```c
 enemiesActive = true;          // domyślnie włączony
 levelEnemyFrequency = 96;     // domyślna częstotliwość
 ```
+Pozycja startowa pochodzi z pól startx / starty w danych wroga, z opcjonalnym losowym rozrzutem:  
+
+jeśli startxc != 0, pozycja X jest losowana w zakresie startx ± startxc
+enemy->ex = enemyDat[eDatI].startx + (mt_rand() % (startxc * 2)) - startxc + 1;  
+
+jeśli startxc == 0, pozycja jest po prostu stała
+enemy->ex = enemyDat[eDatI].startx + 1;  
+
+To samo dla Y.  
+
+Prędkość pochodzi z pól xmove / ymove w danych wroga:
+cenemy->exc = enemyDat[eDatI].xmove;
+enemy->eyc = enemyDat[eDatI].ymove;  
+
+Czyli wróg pojawia się dokładnie tam i porusza dokładnie tak, jak ma zapisane w swojej definicji — ani o piksel inaczej. Projektant poziomu nie ma tu żadnej kontroli nad pozycją ani ruchem poza tym, jakich wrogów wpisze do tablicy levelEnemy.
+
+### Grupy slotów wrogów
+
+`JE_newEnemy(0, tempW, 0)` spawnuje wroga do pierwszego wolnego slotu w grupie **Ground (indeksy 0–24)**. Dla porównania:
+
+| Grupa | Indeksy slotów | Wywołanie |
+|-------|---------------|-----------|
+| Ground | 0–24 | `JE_newEnemy(0, ...)` |
+| Sky | 25–49 | `JE_newEnemy(25, ...)` / event 15 |
+| Top | 50–74 | `JE_newEnemy(50, ...)` |
+
+Losowy spawn zawsze trafia do grupy **Ground**, nie Sky.
 
 ### Typowe zastosowania
 
@@ -1202,17 +1231,21 @@ eventtype = 37
 eventdat = 50  // levelEnemyFrequency = 50 (częstszy spawn)
 ```
 
+**4. Maksymalna częstotliwość spawnu (spawn w każdej klatce):**
+```
+eventtype = 37
+eventdat = 0   // levelEnemyFrequency = 0 (zawsze spawnuje)
+```
+
 ### Różnice od eventów spawnu
 
 | Cecha | Eventy spawnu (6, 7, 10, 15, etc.) | Losowy spawn |
 |-------|--------------------------------------|--------------|
-| Czas | Zdefiniowany w pliku `.lvl` (eventtime) | Losowy w każdej klatce |
-| Pozycja | Zdefiniowana w evencie | Losowa (slot 0) |
+| Czas | Zdefiniowany w pliku `.lvl` (`eventtime`) | Losowy w każdej klatce |
+| Pozycja | Zdefiniowana w evencie | Losowa (pierwszy wolny slot w grupie Ground) |
 | ID wroga | Zdefiniowane w evencie | Losowe z tablicy `levelEnemy` |
 | Kontrola | Precyzyjna przez eventy | Ogólna przez `levelEnemyFrequency` |
-
-Losowy spawn zawsze spawnowa do slotu 0 (Sky) i używa wrogów z tablicy `levelEnemy`, która jest ładowana z pliku `.lvl`.
-
+| Dźwięk | Zależy od wroga | Specjalny przypadek dla ID 2 (`S_WEAPON_7`) |
 ---
 
 ### Event 46 — Zmiana trudności
