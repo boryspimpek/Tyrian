@@ -1087,6 +1087,110 @@ Wróg porusza się w dół zarówno przez prędkość fizyczną (`y_vel=2`) jak 
 
 ---
 
+### Event 10 — Ground Enemy 2
+
+Spawns enemy in the Ground2 slot (enemyOffset=75), which is the second ground enemy slot. Enemies spawned with this event appear from the top of the screen and scroll with `backMove`. This event is identical to Event 6 (Ground Enemy) but uses a different slot.
+
+| Pole | Zmienna | Działanie |
+|------|---------|-----------|
+| eventdat  | `enemy_id` | ID przeciwnika w bazie danych (`enemyDat`) |
+| eventdat2 | `x` | Pozycja X spawnu; `-99` = nie modyfikuj X (użyj danych wroga) |
+| eventdat3 | `y_vel` | Modyfikator prędkości pionowej; dodawany do `eyc` |
+| eventdat4 | `link_num` | Numer grupy/formacji (`linknum`) |
+| eventdat5 | `y_offset` | Korekta pozycji startowej Y |
+| eventdat6 | `fixed_move_y` | Stały ruch pionowy niezależny od fizyki |
+
+### Mechanika działania
+
+Event 10 wywołuje `JE_createNewEventEnemy(0, 75, 0)`, gdzie drugi parametr `75` oznacza slot Ground2 (drugie tło naziemne).
+
+**1. Obliczenie pozycji X (gdy `eventdat2 != -99`):**
+
+```c
+enemy.ex = eventdat2 - (mapX - 1) * 24 - 12;
+```
+
+Wzór jest identyczny jak dla Event 6 (Ground Enemy). Pozycja X jest korygowana o przesunięcie mapy i offset `-12`.
+
+**2. Obliczenie pozycji Y (gdy `eventdat2 != -99`):**
+
+```c
+enemy.ey = -28;
+enemy.ey -= backMove;  // scrolling tła 1
+
+enemy.ey += eventdat5;  // y_offset
+```
+
+Bazowa pozycja to `-28`, odjęcie `backMove` (domyślnie 1) daje `-29`. Następnie dodawany jest `y_offset`.
+
+**3. Inicjalizacja pozostałych pól (zawsze):**
+
+```c
+enemy.eyc += eventdat3;      // y_vel
+enemy.linknum = eventdat4;   // link_num
+enemy.fixedmovey = eventdat6; // fixed_move_y
+```
+
+### Różnice względem Event 6
+
+| Właściwość | Event 6 | Event 10 |
+|------------|---------|----------|
+| Slot | 25 (Ground) | 75 (Ground2) |
+| Indeksy wrogów | 25–49 | 75–99 |
+| Scrolling | `backMove` | `backMove` |
+| Wzór X | Identyczny | Identyczny |
+| Wzór Y | Identyczny | Identyczny |
+
+Oba eventy używają tego samego wzoru pozycji i scrollingu, ale operują na niezależnych slotach, co pozwala na jednoczesne istnienie do 50 wrogów naziemnych (25 w każdym slocie).
+
+### Typowe zastosowania
+
+**1. Druga fala wrogów naziemnych:**
+```json
+{
+  "event_type": 10,
+  "enemy_id": 100,
+  "x": 80,
+  "y_offset": 0,
+  "link_num": 15
+}
+```
+Wróg ID 100 spawnuje w slocie Ground2, niezależnie od wrogów w slocie Ground.
+
+**2. Formacja w drugim slocie naziemnym:**
+```json
+{
+  "event_type": 10,
+  "enemy_id": 101,
+  "x": 200,
+  "y_offset": 5,
+  "link_num": 20
+}
+```
+Wrogowie z `link_num=20` tworzą formację w drugim slocie naziemnym.
+
+**3. Wróg ze stałym ruchem w górę:**
+```json
+{
+  "event_type": 10,
+  "enemy_id": 102,
+  "x": 120,
+  "y_vel": -1,
+  "fixed_move_y": -1,
+  "link_num": 0
+}
+```
+Wróg porusza się w górę zarówno przez prędkość fizyczną (`y_vel=-1`) jak i stały ruch (`fixed_move_y=-1`).
+
+### Ograniczenia
+
+- **Slot Ground2:** Wrogowie zawsze trafiają do slotu 75 (indeksy 75–99)
+- **Scrolling:** Pozycja Y jest korygowana o `backMove` (scrolling tła 1)
+- **Limit 25 wrogów:** Maksymalnie 25 wrogów w jednym momencie w slocie Ground2
+- **Niezależność od Ground:** Slot Ground2 jest całkowicie niezależny od slotu Ground
+
+---
+
 ### Tabela pozostałych eventów globalnych
 
 | Type | Pole(a) | Efekt |
