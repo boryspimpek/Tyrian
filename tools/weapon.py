@@ -60,8 +60,8 @@ def unpack_weapon(str):
 def weapon_to_dict(weapon_data, index=None):
 	"""Convert weapon data to dict format for JSON serialization."""
 	if index is not None:
-		weapon_data['index'] = index
-		# weapon_data['index'] = "%04X" % index
+		# weapon_data['index'] = index
+		weapon_data['index'] = "%04X" % index
 	return weapon_data
 
 

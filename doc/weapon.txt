@@ -46,3 +46,20 @@ item_graphic: Ikona broni wyświetlana w menu wyposażenia (hangarze).
 modes_count: Liczba dostępnych poziomów ulepszeń (Level 1, Level 2 itd.).
 
 firing_modes: Tablice zawierające indeksy (ID) struktur strzelania. Każdy kolejny poziom ulepszenia broni (Power Level) aktywuje kolejny zestaw indeksów z tablicy mode_1.
+
+
+ENEMY AIM LOGIC
+aim > 0 – sprawdza, czy przeciwnik ma parametr aim (celowanie).
+
+Wybierany jest cel (targetX, targetY).
+
+Obliczana jest różnica pozycji celu i przeciwnika (aimX, aimY).
+
+Normalizacja wektora – dzielenie przez maxMagAim (największa składowa).
+
+Mnożenie przez aim – to daje prędkość pocisku w osiach X i Y w kierunku gracza.
+
+Wynik zaokrąglany (roundf) i zapisywany jako sxm, sym (prędkość pocisku).
+
+Podsumowanie:
+Logika aim to proste celowanie w gracza – pocisk leci w kierunku pozycji gracza z prędkością zależną od wartości aim (im wyższa, tym szybszy i celniejszy lot).
