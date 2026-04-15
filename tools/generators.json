@@ -1,0 +1,72 @@
+[
+  {
+    "index": 0,
+    "name": "None",
+    "stats": {
+      "item_graphic": 0,
+      "power": 0,
+      "speed": 2,
+      "cost": 0
+    }
+  },
+  {
+    "index": 1,
+    "name": "Standard MR-9",
+    "stats": {
+      "item_graphic": 241,
+      "power": 10,
+      "speed": 0,
+      "cost": 500
+    }
+  },
+  {
+    "index": 2,
+    "name": "Advanced MR-12",
+    "stats": {
+      "item_graphic": 243,
+      "power": 14,
+      "speed": 0,
+      "cost": 2000
+    }
+  },
+  {
+    "index": 3,
+    "name": "Gencore Custom MR-12",
+    "stats": {
+      "item_graphic": 269,
+      "power": 19,
+      "speed": 1,
+      "cost": 5000
+    }
+  },
+  {
+    "index": 4,
+    "name": "Standard MicroFusion",
+    "stats": {
+      "item_graphic": 245,
+      "power": 25,
+      "speed": 1,
+      "cost": 10000
+    }
+  },
+  {
+    "index": 5,
+    "name": "Advanced MircoFusion",
+    "stats": {
+      "item_graphic": 267,
+      "power": 30,
+      "speed": 0,
+      "cost": 15000
+    }
+  },
+  {
+    "index": 6,
+    "name": "Gravitron Pulse-Wave",
+    "stats": {
+      "item_graphic": 271,
+      "power": 50,
+      "speed": 255,
+      "cost": 50000
+    }
+  }
+]
