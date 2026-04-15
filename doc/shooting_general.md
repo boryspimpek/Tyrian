@@ -459,16 +459,19 @@ Przykład użycia w oryginalnych danych:
 aim = 10 – pocisk leci prosto na gracza od razu
 tx = 2, ty = 1 – pocisk leci mniej więcej w stronę gracza, ale może go "przegapić"
 
+---
 
 ## Dokumentacja pól attack i del w systemie strzelania Tyriana
-Uwaga wstępna
+
+### Uwaga wstępna
 Pola attack i del znajdują się w strukturze patterns każdej broni. Ich interpretacja ZALEŻY od tego, kto strzela – gracz (player) lub wróg (enemy). Ten dokument opisuje oba przypadki.
 
-1. Pole attack – Obrażenia i efekty specjalne
-1.1 Dla gracza (PLAYER) – pełna logika
+### 1. Pole attack – Obrażenia i efekty specjalne
+
+#### 1.1 Dla gracza (PLAYER) – pełna logika
 W kodzie shots.c (funkcja player_shot_create) wartość attack jest interpretowana w następujący sposób:
 
-c
+```c
 // Kod oryginalny (shots.c)
 if (weapon->attack[shotMultiPos[bay_i]-1] > 99 && weapon->attack[shotMultiPos[bay_i]-1] < 250)
 {
@@ -493,16 +496,20 @@ else
         infiniteShot = true;
     }
 }
-Tabela wartości dla gracza:
+```
 
-Zakres/Wartość	Interpretacja	Obrażenia	Efekt dodatkowy
-1-98	Normalne obrażenia	= wartość	brak
-99	Zamrożenie	0	Zatrzymanie wroga na 40 klatek
-100-249	Chain reaction	1	Wystrzelenie nowej broni o ID = (wartość - 100)
-250-255	Infinite shot	= (wartość - 250)	Penetracja (przechodzi przez wrogów)
-Przykłady użycia w oryginalnych danych Tyriana:
+##### Tabela wartości dla gracza:
 
-c
+| Zakres/Wartość | Interpretacja | Obrażenia | Efekt dodatkowy |
+|----------------|---------------|-----------|-----------------|
+| 1-98 | Normalne obrażenia | = wartość | brak |
+| 99 | Zamrożenie | 0 | Zatrzymanie wroga na 40 klatek |
+| 100-249 | Chain reaction | 1 | Wystrzelenie nowej broni o ID = (wartość - 100) |
+| 250-255 | Infinite shot | = (wartość - 250) | Penetracja (przechodzi przez wrogów) |
+
+##### Przykłady użycia w oryginalnych danych Tyriana:
+
+```c
 // Przykład 1: Zwykły pocisk
 attack = 10;   // Obrażenia 10, brak efektów specjalnych
 
@@ -514,30 +521,39 @@ attack = 99;   // Brak obrażeń, zamrożenie wroga na 40 klatek
 
 // Przykład 4: Przenikający laser
 attack = 255;  // Obrażenia 5 (255-250), przenika przez wszystkich wrogów
-1.2 Dla wroga (ENEMY) – prosta logika
+```
+
+#### 1.2 Dla wroga (ENEMY) – prosta logika
 W kodzie tyrian2.c (pętla strzelania wroga) wartość attack jest używana bez żadnej interpretacji:
 
-c
+```c
 // Kod oryginalny (tyrian2.c)
 enemyShot[b].sdmg = weapons[temp3].attack[tempPos];
 // Brak dodatkowych warunków!
-Tabela wartości dla wroga:
+```
 
-Zakres/Wartość	Interpretacja	Uwagi
-Dowolna liczba	Obrażenia = wartość	Bez chain reaction, bez infinite shot, bez zamrożenia
-Przykład:
+##### Tabela wartości dla wroga:
 
-c
+| Zakres/Wartość | Interpretacja | Uwagi |
+|----------------|---------------|-------|
+| Dowolna liczba | Obrażenia = wartość | Bez chain reaction, bez infinite shot, bez zamrożenia |
+
+##### Przykład:
+
+```c
 // Dla wroga WSZYSTKIE te wartości oznaczają TYLKO obrażenia:
 attack = 10;   // Obrażenia 10
 attack = 99;   // Obrażenia 99 (NIE zamrożenie!)
 attack = 150;  // Obrażenia 150 (NIE chain reaction!)
 attack = 255;  // Obrażenia 255 (NIE penetracja!)
-2. Pole del – Czas życia i efekty specjalne
-2.1 Dla gracza (PLAYER) – pełna logika
+```
+
+### 2. Pole del – Czas życia i efekty specjalne
+
+#### 2.1 Dla gracza (PLAYER) – pełna logika
 W kodzie shots.c wartość del jest interpretowana w następujący sposób:
 
-c
+```c
 // Kod oryginalny (shots.c)
 JE_byte del = weapon->del[shotMultiPos[bay_i]-1];
 
@@ -573,20 +589,24 @@ if (del > 100 && del < 120)
 
 // Normalny przypadek – czas życia
 shotAvail[shot_id] = del;
-Tabela wartości dla gracza:
+```
 
-Wartość	Interpretacja	Czas życia	Efekt dodatkowy
-1-97	Normalny czas życia	= wartość	brak
-98	Reakcja na mysz (X)	98	Korekta prędkości X wg pozycji myszy
-99	Reakcja na mysz (X+Y)	99	Korekta prędkości X i Y wg pozycji myszy
-100	Reakcja na mysz (Y)	100	Korekta prędkości Y wg pozycji myszy
-101-119	Animowany pocisk	= wartość	Liczba klatek animacji = (wartość - 100 + 1)
-120	(zakres końcowy)	120	(jak wyżej)
-121	Specjalny trail	255	Wyłącza efekt śladu (trail = 0)
-122-255	Normalny czas życia	= wartość	brak
-Przykłady użycia w oryginalnych danych Tyriana:
+##### Tabela wartości dla gracza:
 
-c
+| Wartość | Interpretacja | Czas życia | Efekt dodatkowy |
+|---------|---------------|------------|-----------------|
+| 1-97 | Normalny czas życia | = wartość | brak |
+| 98 | Reakcja na mysz (X) | 98 | Korekta prędkości X wg pozycji myszy |
+| 99 | Reakcja na mysz (X+Y) | 99 | Korekta prędkości X i Y wg pozycji myszy |
+| 100 | Reakcja na mysz (Y) | 100 | Korekta prędkości Y wg pozycji myszy |
+| 101-119 | Animowany pocisk | = wartość | Liczba klatek animacji = (wartość - 100 + 1) |
+| 120 | (zakres końcowy) | 120 | (jak wyżej) |
+| 121 | Specjalny trail | 255 | Wyłącza efekt śladu (trail = 0) |
+| 122-255 | Normalny czas życia | = wartość | brak |
+
+##### Przykłady użycia w oryginalnych danych Tyriana:
+
+```c
 // Przykład 1: Zwykły pocisk żyjący 50 klatek
 del = 50;
 
@@ -598,33 +618,43 @@ del = 105;   // shotAniMax = (105-100+1) = 6 klatek animacji
 
 // Przykład 4: Długi czas życia bez trailu
 del = 121;   // Czas życia 255 klatek, trail wyłączony
-2.2 Dla wroga (ENEMY) – prosta logika
+```
+
+#### 2.2 Dla wroga (ENEMY) – prosta logika
 W kodzie tyrian2.c wartość del jest używana bez żadnej interpretacji:
 
-c
+```c
 // Kod oryginalny (tyrian2.c)
 enemyShot[b].duration = weapons[temp3].del[tempPos];
 // Brak dodatkowych warunków!
-Tabela wartości dla wroga:
+```
 
-Wartość	Interpretacja	Uwagi
-Dowolna liczba	Czas życia = wartość	Bez reakcji na mysz, bez specjalnej animacji, bez specjalnego trailu
-Przykład:
+##### Tabela wartości dla wroga:
 
-c
+| Wartość | Interpretacja | Uwagi |
+|---------|---------------|-------|
+| Dowolna liczba | Czas życia = wartość | Bez reakcji na mysz, bez specjalnej animacji, bez specjalnego trailu |
+
+##### Przykład:
+
+```c
 // Dla wroga WSZYSTKIE te wartości oznaczają TYLKO czas życia:
 del = 50;    // Czas życia 50 klatek
 del = 98;    // Czas życia 98 klatek (NIE reakcja na mysz!)
 del = 105;   // Czas życia 105 klatek (NIE animacja!)
 del = 121;   // Czas życia 121 klatek (NIE specjalny trail!)
-3. Podsumowanie różnic między graczem a wrogiem
-Pole	Aspekt	Gracz (Player)	Wróg (Enemy)
-attack	Zakres 1-98	Obrażenia = wartość	Obrażenia = wartość
-Wartość 99	Zamrożenie (obrażenia 0)	Obrażenia 99
-Zakres 100-249	Chain reaction (obrażenia 1)	Obrażenia = wartość
-Zakres 250-255	Infinite shot (obrażenia = wartość-250)	Obrażenia = wartość
-del	Wartości 1-97	Czas życia = wartość	Czas życia = wartość
-Wartości 98-100	Reakcja na mysz (korekta trajektorii)	Czas życia = wartość
-Wartości 101-120	Animacja (liczba klatek = wartość-100+1)	Czas życia = wartość
-Wartość 121	Specjalny trail (czas życia 255)	Czas życia = 121
-Wartości 122-255	Czas życia = wartość	Czas życia = wartość
+```
+
+### 3. Podsumowanie różnic między graczem a wrogiem
+
+| Pole | Aspekt | Gracz (Player) | Wróg (Enemy) |
+|------|--------|----------------|--------------|
+| attack | Zakres 1-98 | Obrażenia = wartość | Obrażenia = wartość |
+| | Wartość 99 | Zamrożenie (obrażenia 0) | Obrażenia 99 |
+| | Zakres 100-249 | Chain reaction (obrażenia 1) | Obrażenia = wartość |
+| | Zakres 250-255 | Infinite shot (obrażenia = wartość-250) | Obrażenia = wartość |
+| del | Wartości 1-97 | Czas życia = wartość | Czas życia = wartość |
+| | Wartości 98-100 | Reakcja na mysz (korekta trajektorii) | Czas życia = wartość |
+| | Wartości 101-120 | Animacja (liczba klatek = wartość-100+1) | Czas życia = wartość |
+| | Wartość 121 | Specjalny trail (czas życia 255) | Czas życia = 121 |
+| | Wartości 122-255 | Czas życia = wartość | Czas życia = wartość |

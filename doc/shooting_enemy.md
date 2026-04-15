@@ -1,9 +1,10 @@
-Dokumentacja mechaniki strzelania wroga (Enemy) – Tyrian
-Uwaga wstępna
+# Dokumentacja mechaniki strzelania wroga (Enemy) – Tyrian
+
+## Uwaga wstępna
 Wrogowie w Tyrianie używają tej samej struktury broni co gracz, ale z uproszczoną logiką – pomijają wiele zaawansowanych mechanik (przyspieszenie, circlesize, trail, chain reaction, infinite shot, zamrożenie). Ten dokument opisuje pełną logikę strzelania przeciwników na podstawie kodu z tyrian2.c.
 
-2. Struktura danych pocisku wroga
-c
+## 2. Struktura danych pocisku wroga
+```c
 // Z tyrian2.c – struktura pocisku wroga
 typedef struct {
     JE_integer sx;           // pozycja X
@@ -20,10 +21,12 @@ typedef struct {
     JE_byte animate;         // aktualna klatka animacji
     JE_byte animax;          // maksymalna klatka animacji
 } EnemyShot;
-3. Inicjalizacja pocisku wroga
+```
+
+## 3. Inicjalizacja pocisku wroga
 Kod z tyrian2.c (około linii 1700-1850):
 
-c
+```c
 // Znajdź wolny slot na pocisk
 for (b = 0; b < ENEMY_SHOT_MAX; b++) {
     if (enemyShotAvail[b] == 1)
@@ -78,10 +81,12 @@ if (weapons[temp3].aim > 0) {
     enemyShot[b].sxm = roundf((float)aimX / maxMagAim * aim);
     enemyShot[b].sym = roundf((float)aimY / maxMagAim * aim);
 }
-4. Aktualizacja pocisku wroga (każda klatka)
+```
+
+## 4. Aktualizacja pocisku wroga (każda klatka)
 Kod z tyrian2.c (około linii 3000-3100):
 
-c
+```c
 for (int z = 0; z < ENEMY_SHOT_MAX; z++) {
     if (enemyShotAvail[z] == 0) {
         
@@ -121,7 +126,7 @@ for (int z = 0; z < ENEMY_SHOT_MAX; z++) {
             enemyShotAvail[z] = true;
         }
         
-        // KROK 5: Animacja
+        // KROK 5: Aktualizacja animacji
         if (enemyShot[z].animax != 0) {
             if (++enemyShot[z].animate >= enemyShot[z].animax)
                 enemyShot[z].animate = 0;
@@ -136,10 +141,12 @@ for (int z = 0; z < ENEMY_SHOT_MAX; z++) {
                         spriteSheet8, enemyShot[z].sgr + enemyShot[z].animate);
     }
 }
-5. System szybkostrzelności wroga (freq)
+```
+
+## 5. System szybkostrzelności wroga (freq)
 Wrogowie mają 3 niezależne lufy, każda z własną częstotliwością strzałów:
 
-c
+```c
 // Struktura wroga (tyrian2.c)
 typedef struct {
     JE_byte freq[3];        // częstotliwość strzałów dla każdej lufy (w klatkach)
@@ -166,23 +173,29 @@ for (int j = 3; j > 0; j--) {
         }
     }
 }
-Przykład użycia freq:
+```
 
-c
+### Przykład użycia freq:
+
+```c
 // Wróg z trzema lufami strzelającymi w różnym tempie
 freq[0] = 60;   // lufa 1: co 60 klatek (wolno)
 freq[1] = 30;   // lufa 2: co 30 klatek (średnio)
 freq[2] = 15;   // lufa 3: co 15 klatek (szybko)
-6. Specjalne typy strzałów wroga (wartości tur)
+```
+
+## 6. Specjalne typy strzałów wroga (wartości tur)
 W kodzie tyrian2.c zidentyfikowano specjalne wartości tur, które nie są zwykłymi pociskami:
 
-Wartość	Nazwa	Działanie
-251	Suck-O-Magnet	Przyciąga statek gracza
-252	Savara Boss DualMissile	Tworzy dwie eksplozje zamiast pocisków
-253	Left ShortRange Magnet	Odpycha gracza w lewo (krótki zasięg)
-254	Right ShortRange Magnet	Odpycha gracza w prawo (krótki zasięg)
-255	Magneto RePulse	Odpycha gracza (długi zasięg) + filtr wizualny
-c
+| Wartość | Nazwa | Działanie |
+|---------|-------|-----------|
+| 251 | Suck-O-Magnet | Przyciąga statek gracza |
+| 252 | Savara Boss DualMissile | Tworzy dwie eksplozje zamiast pocisków |
+| 253 | Left ShortRange Magnet | Odpycha gracza w lewo (krótki zasięg) |
+| 254 | Right ShortRange Magnet | Odpycha gracza w prawo (krótki zasięg) |
+| 255 | Magneto RePulse | Odpycha gracza (długi zasięg) + filtr wizualny |
+
+```c
 // Przykład – Magneto RePulse (tyrian2.c)
 case 255: /* Magneto RePulse!! */
     if (difficultyLevel != DIFFICULTY_EASY) {
@@ -196,17 +209,23 @@ case 255: /* Magneto RePulse!! */
         }
     }
     break;
-7. Modyfikatory poziomu trudności dla wrogów
-Mechanika	Poziom trudności	Modyfikacja
-Szybkostrzelność (freq)	Normalny	brak
-Hard, Impossible, Insanity	wait = (wait / 2) + 1
-Maniacal, Zinglon, Nortaneous	wait = (wait / 2) + 1 (dwa razy)
-Celność (aim)	Normalny	brak
-Hard+	aim += difficultyLevel - 2
-Obrażenia od wroga	Brak skalingu	sdmg bez zmian
-Wytrzymałość wroga (armor)	Patrz osobny dokument	Skaluje się z trudnością
-8. Pełna sekwencja aktualizacji (kolejność)
-text
+```
+
+## 7. Modyfikatory poziomu trudności dla wrogów
+
+| Mechanika | Poziom trudności | Modyfikacja |
+|-----------|------------------|-------------|
+| Szybkostrzelność (freq) | Normalny | brak |
+| | Hard, Impossible, Insanity | wait = (wait / 2) + 1 |
+| | Maniacal, Zinglon, Nortaneous | wait = (wait / 2) + 1 (dwa razy) |
+| Celność (aim) | Normalny | brak |
+| | Hard+ | aim += difficultyLevel - 2 |
+| Obrażenia od wroga | Brak skalingu | sdmg bez zmian |
+| Wytrzymałość wroga (armor) | Patrz osobny dokument | Skaluje się z trudnością |
+
+## 8. Pełna sekwencja aktualizacji (kolejność)
+
+```text
 KROK 1: Dodaj przyspieszenie do prędkości (sxc, syc)
    ↓
 KROK 2: Dodaj prędkość do pozycji (sx += sxm, sy += sym)
@@ -218,8 +237,9 @@ KROK 4: Sprawdź czy pocisk żyje (duration--, granice ekranu)
 KROK 5: Aktualizacja animacji (animate)
    ↓
 KROK 6: Renderowanie
+```
 
-Kluczowe wnioski
+## Kluczowe wnioski
 Wróg jest prostszy – brak wielu zaawansowanych mechanik gracza.
 
 Homing (tx, ty) to unikalna cecha wrogów – gracz jej nie ma.
