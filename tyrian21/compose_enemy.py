@@ -7,7 +7,7 @@ from functools import lru_cache
 from PIL import Image
 
 BASE_TILES_DIR = "."
-OUTPUT_PATH = "enemy_lvl1"
+OUTPUT_PATH = "extracted_enemy"
 JSON_FILE = "enemies.json"
 
 TILE_W, TILE_H = 12, 14
