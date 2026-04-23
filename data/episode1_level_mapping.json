@@ -1,0 +1,220 @@
+{
+  "_meta": {
+    "description": "Mapowanie poziomów Episode 1 Tyriana. Źródło: levels1.dat (zaszyfrowany Pascal string script) + tyrian1.lvl (tabela lvlPos).",
+    "how_it_works": [
+      "levels1.dat zawiera skrypt epizodu jako zaszyfrowane Pascal strings (1 bajt długość + dane).",
+      "Szyfrowanie: XOR od końca do początku: result[i] ^= key[i%10]; if i>0: result[i] ^= result[i-1] (klucz: [204,129,63,255,71,19,25,62,1,99]).",
+      "Linie sterujące poziomem zaczynają się od ']L[' i mają stały format:",
+      "  s[0..2]  = ']L['",
+      "  s[3..8]  = ' 9999 '  (padding/ignorowane)",
+      "  s[9..12] = nextSection (numer sekcji skryptu po przejściu poziomu)",
+      "  s[13..21]= levelName (9 znaków)",
+      "  s[22..24]= levelSong (numer muzyki)",
+      "  s[25..27]= lvlFileNum (klucz do pliku .lvl)",
+      "  s[28]    = '$' jeśli poziom bonusowy",
+      "tyrian1.lvl zaczyna się od: uint16 lvlNum, potem lvlNum x int32 = tabela offsetów lvlPos[].",
+      "Gra wczytuje poziom: fseek(lvlPos[(lvlFileNum-1)*2])  — używa TYLKO parzystych indeksów!",
+      "Nieparzyste indeksy (lvlPos[1], [3], ...) to alternatywne/bonusowe warianty poziomów — 'dziwne' lvl2.json, lvl4.json itd.",
+      "Jeśli parsowałeś lvlPos sekwencyjnie: json_file = lvl{lvlPosIndex+1}.json gdzie lvlPosIndex = (lvlFileNum-1)*2"
+    ],
+    "source_files": {
+      "encryption": "src/helptext.c:decrypt_string()",
+      "level_script_parsing": "src/tyrian2.c:2619 case 'L'",
+      "lvl_file_parsing": "src/tyrian2.c:2998 JE_loadMap()",
+      "lvlPos_loading": "src/lvllib.c:JE_analyzeLevel()"
+    }
+  },
+  "episode": 1,
+  "lvl_file": "tyrian1.lvl",
+  "script_file": "levels1.dat",
+  "levels": [
+    {
+      "game_order": 1,
+      "name": "TYRIAN",
+      "script_section": 3,
+      "lvl_file_num": 9,
+      "lvl_pos_index": 16,
+      "extracted_json": "lvl17.json",
+      "song": 18,
+      "bonus": false,
+      "note": "Pierwsze miasto — pierwszy poziom w grze"
+    },
+    {
+      "game_order": 2,
+      "name": "ASTEROID101",
+      "script_section": 5,
+      "lvl_file_num": 1,
+      "lvl_pos_index": 0,
+      "extracted_json": "lvl1.json",
+      "song": 1,
+      "bonus": false
+    },
+    {
+      "game_order": 3,
+      "name": "ASTEROID202",
+      "script_section": 6,
+      "lvl_file_num": 2,
+      "lvl_pos_index": 2,
+      "extracted_json": "lvl3.json",
+      "song": 2,
+      "bonus": false
+    },
+    {
+      "game_order": 4,
+      "name": "SAVARA",
+      "script_section": 10,
+      "lvl_file_num": 12,
+      "lvl_pos_index": 22,
+      "extracted_json": "lvl23.json",
+      "song": 33,
+      "bonus": false
+    },
+    {
+      "game_order": 5,
+      "name": "MINES",
+      "script_section": 13,
+      "lvl_file_num": 7,
+      "lvl_pos_index": 12,
+      "extracted_json": "lvl13.json",
+      "song": 17,
+      "bonus": false
+    },
+    {
+      "game_order": 6,
+      "name": "BUBBLES",
+      "script_section": 16,
+      "lvl_file_num": 4,
+      "lvl_pos_index": 6,
+      "extracted_json": "lvl7.json",
+      "song": 26,
+      "bonus": true
+    },
+    {
+      "game_order": 7,
+      "name": "DELIANI",
+      "script_section": 19,
+      "lvl_file_num": 5,
+      "lvl_pos_index": 8,
+      "extracted_json": "lvl9.json",
+      "song": 14,
+      "bonus": false
+    },
+    {
+      "game_order": 8,
+      "name": "ASTEROID?02",
+      "script_section": 21,
+      "lvl_file_num": 3,
+      "lvl_pos_index": 4,
+      "extracted_json": "lvl5.json",
+      "song": 2,
+      "bonus": true
+    },
+    {
+      "game_order": 9,
+      "name": "MINEMAZE",
+      "script_section": 23,
+      "lvl_file_num": 6,
+      "lvl_pos_index": 10,
+      "extracted_json": "lvl11.json",
+      "song": 23,
+      "bonus": true
+    },
+    {
+      "game_order": 10,
+      "name": "BONUS",
+      "script_section": 25,
+      "lvl_file_num": 10,
+      "lvl_pos_index": 18,
+      "extracted_json": "lvl19.json",
+      "song": 18,
+      "bonus": true
+    },
+    {
+      "game_order": 11,
+      "name": "HOLES",
+      "script_section": 28,
+      "lvl_file_num": 11,
+      "lvl_pos_index": 20,
+      "extracted_json": "lvl21.json",
+      "song": 24,
+      "bonus": true
+    },
+    {
+      "game_order": 12,
+      "name": "SAVARA II",
+      "script_section": 29,
+      "lvl_file_num": 8,
+      "lvl_pos_index": 14,
+      "extracted_json": "lvl15.json",
+      "song": 33,
+      "bonus": false
+    },
+    {
+      "game_order": 13,
+      "name": "SOH JIN",
+      "script_section": 31,
+      "lvl_file_num": 13,
+      "lvl_pos_index": 24,
+      "extracted_json": "lvl25.json",
+      "song": 16,
+      "bonus": false
+    },
+    {
+      "game_order": 14,
+      "name": "WINDY",
+      "script_section": 33,
+      "lvl_file_num": 14,
+      "lvl_pos_index": 26,
+      "extracted_json": "lvl27.json",
+      "song": 26,
+      "bonus": true
+    },
+    {
+      "game_order": 15,
+      "name": "ASSASSIN",
+      "script_section": 36,
+      "lvl_file_num": 16,
+      "lvl_pos_index": 30,
+      "extracted_json": "lvl31.json",
+      "song": 36,
+      "bonus": false
+    },
+    {
+      "game_order": 16,
+      "name": "SAVARA V",
+      "script_section": 38,
+      "lvl_file_num": 17,
+      "lvl_pos_index": 32,
+      "extracted_json": "lvl33.json",
+      "song": 33,
+      "bonus": false
+    },
+    {
+      "game_order": 17,
+      "name": "TYRIAN (revisit)",
+      "script_section": 3,
+      "lvl_file_num": 15,
+      "lvl_pos_index": 28,
+      "extracted_json": "lvl29.json",
+      "song": 18,
+      "bonus": false,
+      "note": "Ta sama sekcja skryptu co pierwsze TYRIAN, inna mapa"
+    },
+    {
+      "game_order": 18,
+      "name": "** ALE **",
+      "script_section": 41,
+      "lvl_file_num": 18,
+      "lvl_pos_index": 34,
+      "extracted_json": "lvl35.json",
+      "song": 41,
+      "bonus": true,
+      "note": "Sekretny poziom bonusowy"
+    }
+  ],
+  "unused_json_files": {
+    "description": "Pliki lvl parsowane z nieparzystych indeksów lvlPos — gra ich nie używa w normalnym trybie",
+    "files": ["lvl2.json","lvl4.json","lvl6.json","lvl8.json","lvl10.json","lvl12.json","lvl14.json","lvl16.json","lvl18.json","lvl20.json","lvl22.json","lvl24.json","lvl26.json","lvl28.json","lvl30.json","lvl32.json","lvl34.json"],
+    "note": "Mogą to być alternatywne wersje poziomów lub dane debugowe pozostawione przez Ecliptic Enterprises"
+  }
+}
