@@ -1,6 +1,6 @@
 """
 Tworzy folder weapon_sprites/ z kopiami sprite'ow nazwanymi wedlug schematu:
-  port{idx:02d}_{name}__lvl{lvl:02d}__w{weapon_idx:04d}__{sheet}_{sprite_idx:04d}.bmp
+  port{idx:02d}_{name}__lvl{lvl:02d}__w{weapon_idx:04d}__{sheet}_{sprite_idx:04d}.png
 
 Dla kazdego portu i poziomu mocy kopiowane sa wszystkie unikalne sprite'y.
 """
@@ -17,14 +17,14 @@ OUT_DIR      = r"C:\Users\borys\projekty\Tyrian\tyrian21\weapon_sprites"
 
 
 def sg_to_file(sg):
-    """Przelicza wartosc sg na nazwe pliku BMP. Zwraca None dla wartosci specjalnych."""
+    """Przelicza wartosc sg na nazwe pliku PNG. Zwraca None dla wartosci specjalnych."""
     if sg == 0 or sg >= 60000:
         return None
     frame = sg % 1000 if sg > 1000 else sg
     if frame > 500:
-        return f"shots2_{frame - 500:04d}.bmp"
+        return f"shots2_{frame - 500:04d}.png"
     if frame > 0:
-        return f"shots_{frame:04d}.bmp"
+        return f"shots_{frame:04d}.png"
     return None
 
 
@@ -77,13 +77,13 @@ def export():
                         missing += 1
                         continue
 
-                    base = fname.replace(".bmp", "")
+                    base = fname.replace(".png", "")
                     dst_name = (
                         f'port{port_idx:02d}_{port_slug}'
                         f'{mode_suffix}'
                         f'__lvl{lvl:02d}'
                         f'__w{wpn_idx:04d}'
-                        f'__{base}.bmp'
+                        f'__{base}.png'
                     )
                     shutil.copy2(src, os.path.join(OUT_DIR, dst_name))
                     copied += 1
