@@ -1,0 +1,115 @@
+TRASA: OD WYBORU BRONI DO SPRITE'A POCISKU
+===========================================
+
+Cel: znalezc plik BMP z grafika pocisku dla konkretnej broni gracza.
+
+
+KROK 1 — Znajdz port broni w weapon_ports.json
+-----------------------------------------------
+Plik: data/weapon_ports.json
+
+Zawiera liste portow broni (slotow w statku gracza), np.:
+
+  {
+    "index": 20,
+    "name": "Heavy Missile Launcher",
+    "firing_modes": {
+      "mode_1": [411, 412, 413, 414, 415, 416, 417, 418, 419, 420, 421],
+      "mode_2": [0, 0, ...]
+    }
+  }
+
+- "index"       — numer portu (1–43)
+- "name"        — nazwa broni widoczna w sklepie
+- "mode_1"      — lista 11 indeksow broni, po jednym na kazdy poziom mocy (1–11)
+- "mode_2"      — alternatywny tryb ognia (czesto pusty)
+
+Wybierz poziom mocy (np. lvl 1 = mode_1[0]) i zapisz indeks broni.
+Przyklad: Heavy Missile Launcher lvl 1 → weapon index 411
+
+
+KROK 2 — Znajdz definicje broni w weapon.json
+----------------------------------------------
+Plik: data/weapon.json
+
+Wyszukaj wpis z "index" rownym wartosci z kroku 1.
+Wazne pola:
+
+  {
+    "index": "411",
+    "weapAni": 0,          <- liczba dodatkowych klatek animacji (0 = tylko 1 klatka)
+    "max": 1,              <- ile pozycji cykluje (ile patternow jest aktywnych)
+    "multi": 1,            <- ile pociskow jednoczesnie na jeden strzal
+    "patterns": [
+      { "sg": 57, "bx": 0, "by": 0, "sx": 0, "sy": 12, ... },
+      ...
+    ]
+  }
+
+- "sg"    — kluczowa wartosc: indeks graficzny pocisku
+- "bx/by" — przesuniecie miejsca spawnu pocisku wzgledem statku
+- "sx/sy" — predkosc pocisku
+- "max"   — ile patternow jest uzywanych (pattern[0] .. pattern[max-1])
+- "weapAni" — jesli > 0, animacja uzywa sprite'ow sg, sg+1, sg+2 ... sg+weapAni
+
+Przyklad: weapon 411 → sg = 57, weapAni = 0, max = 1
+
+
+KROK 3 — Przelicz sg na nazwe pliku BMP
+-----------------------------------------
+Logika z pliku src/shots.c:
+
+  frame = sg  (+ numer klatki animacji: 0 .. weapAni)
+
+  jesli frame >= 60000  → OPTION_SHAPES (sidekicki, specjalne — nie dotyczy pociskow)
+  jesli frame >  1000   → efekt iskry o kolorze (frame // 1000)
+                           potem: frame = frame % 1000
+  jesli frame >   500   → plik: shots2_{frame-500:04d}.bmp  (bank 11)
+  jesli frame <=  500   → plik: shots_{frame:04d}.bmp       (bank 7)
+
+Przyklad: sg = 57
+  57 <= 500  →  shots_0057.bmp
+
+
+KROK 4 — Znajdz plik BMP
+--------------------------
+Opcja A — bezposrednio w folderze ze spriteami:
+  tyrian21/extracted_tiles/extracted_tyrian_shp/shots_0057.bmp
+
+Opcja B — w folderze z opisowymi nazwami:
+  tyrian21/weapon_sprites/
+
+  Pliki sa nazwane wedlug schematu:
+    port{nr_portu}_{nazwa}__lvl{poziom}__w{nr_broni}__{plik_sprite}.bmp
+
+  Przyklad:
+    port20_heavy_missile_launcher__lvl01__w0411__shots_0057.bmp
+
+  Mozna filtrowac po:
+    port20_*          → wszystkie poziomy Heavy Missile Launcher
+    *__lvl01__*       → wszystkie bronie na poziomie 1
+    *__shots_0057*    → wszystkie bronie uzywajace tego sprite'a
+
+
+SKROT — skrypt lookup_weapon_sprite.py
+---------------------------------------
+Zamiast przechodzic przez wszystkie kroki recznie, uzyj skryptu:
+
+  py tools/lookup_weapon_sprite.py 20             (po numerze portu)
+  py tools/lookup_weapon_sprite.py "missile"      (po fragmencie nazwy)
+  py tools/lookup_weapon_sprite.py                (lista wszystkich portow)
+
+Skrypt czyta weapon_ports.json i weapon.json, przelicza sg na spot'y
+i wyswietla wynik dla wszystkich poziomow mocy.
+
+
+PODSUMOWANIE PLIKOW
+--------------------
+data/weapon_ports.json       — porty broni → indeksy broni wg poziomu mocy
+data/weapon.json             — definicje broni → pole sg (indeks sprite'a)
+tyrian21/weapon_sprites/     — gotowe pliki BMP z opisowymi nazwami
+tyrian21/extracted_tiles/    — surowe sprite'y pogrupowane wg bankow
+tyrian21/atlases/            — atlasy wizualne (przegladanie wszystkich sprite'ow)
+
+UWAGA: weapon_sprite_map.json nie jest potrzebny — kazdy skrypt
+przelicza sg na nazwe pliku bezposrednio z weapon.json.

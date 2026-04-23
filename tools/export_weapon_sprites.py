@@ -11,9 +11,21 @@ import shutil
 import re
 
 PORTS_JSON   = r"C:\Users\borys\projekty\Tyrian\data\weapon_ports.json"
-MAP_JSON     = r"C:\Users\borys\projekty\Tyrian\data\weapon_sprite_map.json"
+WEAPONS_JSON = r"C:\Users\borys\projekty\Tyrian\data\weapon.json"
 SPRITE_DIR   = r"C:\Users\borys\projekty\Tyrian\tyrian21\extracted_tiles\extracted_tyrian_shp"
 OUT_DIR      = r"C:\Users\borys\projekty\Tyrian\tyrian21\weapon_sprites"
+
+
+def sg_to_file(sg):
+    """Przelicza wartosc sg na nazwe pliku BMP. Zwraca None dla wartosci specjalnych."""
+    if sg == 0 or sg >= 60000:
+        return None
+    frame = sg % 1000 if sg > 1000 else sg
+    if frame > 500:
+        return f"shots2_{frame - 500:04d}.bmp"
+    if frame > 0:
+        return f"shots_{frame:04d}.bmp"
+    return None
 
 
 def slugify(name):
@@ -23,32 +35,19 @@ def slugify(name):
 
 
 def load():
-    with open(PORTS_JSON) as f:
-        ports = json.load(f)["weapon_ports"]
-    with open(MAP_JSON) as f:
-        smap = {w["weapon_index"]: w for w in json.load(f)}
-    return ports, smap
-
-
-def unique_sprites(sm):
-    """Zwraca liste unikalnych (sheet, index, file) z pierwszych klatek wszystkich patternow."""
-    seen = set()
-    result = []
-    for p in sm["patterns"]:
-        fr = p["frames"][0]
-        key = fr.get("file", "")
-        if key and fr.get("exists") and key not in seen:
-            seen.add(key)
-            result.append(fr)
-    return result
+    with open(PORTS_JSON)   as f: ports   = json.load(f)["weapon_ports"]
+    with open(WEAPONS_JSON) as f: weapons = json.load(f)["TyrianHDT"]["weapon"]
+    weapons = {int(w["index"], 16) if isinstance(w["index"], str) else w["index"]: w
+               for w in weapons}
+    return ports, weapons
 
 
 def export():
-    ports, smap = load()
+    ports, weapons = load()
     os.makedirs(OUT_DIR, exist_ok=True)
 
-    copied = 0
-    skipped = 0
+    copied  = 0
+    missing = 0
 
     for port in ports:
         port_idx  = port["index"]
@@ -61,20 +60,24 @@ def export():
             for lvl, wpn_idx in enumerate(wpn_indices, start=1):
                 if wpn_idx == 0:
                     continue
-                sm = smap.get(wpn_idx)
-                if not sm:
+                w = weapons.get(wpn_idx)
+                if not w:
                     continue
 
-                sprites = unique_sprites(sm)
-                if not sprites:
-                    skipped += 1
-                    continue
+                # Unikalne sprite'y ze wszystkich aktywnych patternow
+                seen = set()
+                for p in w["patterns"][:w["max"]]:
+                    fname = sg_to_file(p["sg"])
+                    if not fname or fname in seen:
+                        continue
+                    seen.add(fname)
 
-                for fr in sprites:
-                    src = os.path.join(SPRITE_DIR, fr["file"])
-                    # Wyodrebnij sheet i indeks z nazwy pliku np. shots_0067.bmp
-                    base = fr["file"].replace(".bmp", "")  # shots_0067
+                    src = os.path.join(SPRITE_DIR, fname)
+                    if not os.path.exists(src):
+                        missing += 1
+                        continue
 
+                    base = fname.replace(".bmp", "")
                     dst_name = (
                         f'port{port_idx:02d}_{port_slug}'
                         f'{mode_suffix}'
@@ -82,14 +85,11 @@ def export():
                         f'__w{wpn_idx:04d}'
                         f'__{base}.bmp'
                     )
-                    dst = os.path.join(OUT_DIR, dst_name)
-                    shutil.copy2(src, dst)
+                    shutil.copy2(src, os.path.join(OUT_DIR, dst_name))
                     copied += 1
 
-    print(f"Skopiowano: {copied} plikow  (pominieto {skipped} broni bez sprite'ow)")
+    print(f"Skopiowano: {copied} plikow  (brakujacych sprite'ow: {missing})")
     print(f"Folder: {OUT_DIR}")
-
-    # Przyklad nazw
     examples = sorted(os.listdir(OUT_DIR))[:6]
     print("\nPrzykladowe nazwy:")
     for e in examples:
