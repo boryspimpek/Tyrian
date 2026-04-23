@@ -2,8 +2,8 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 
 # --- KONFIGURACJA ---
-SOURCE_FOLDER = "extracted_newsh4.shp"  # Zmień na folder, który chcesz zbadać
-OUTPUT_FILE = "atlas4.png"
+BASE_FOLDER = r"C:\Users\borys\projekty\Tyrian\tyrian21\extracted_tiles"  # Folder bazowy z podfolderami
+OUTPUT_FOLDER = r"C:\Users\borys\projekty\Tyrian\tyrian21\atlases"  # Folder na wygenerowane atlasy
 TILES_PER_ROW = 20  # Ile kafelków w jednym rzędzie atlasu
 TILE_W, TILE_H = 12, 14
 PADDING = 10  # Miejsce na tekst (indeks kafelka)
@@ -62,7 +62,26 @@ def create_atlas(folder_path, output_path):
     print(f"Atlas gotowy: {output_path} ({num_tiles} kafelków)")
 
 if __name__ == "__main__":
-    if os.path.exists(SOURCE_FOLDER):
-        create_atlas(SOURCE_FOLDER, OUTPUT_FILE)
+    # Utwórz folder na wyjściowe atlasy jeśli nie istnieje
+    if not os.path.exists(OUTPUT_FOLDER):
+        os.makedirs(OUTPUT_FOLDER)
+        print(f"Utworzono folder: {OUTPUT_FOLDER}")
+    
+    # Pobierz listę wszystkich podfolderów
+    if not os.path.exists(BASE_FOLDER):
+        print(f"Folder bazowy {BASE_FOLDER} nie istnieje!")
     else:
-        print(f"Folder {SOURCE_FOLDER} nie istnieje!")
+        subfolders = [f for f in os.listdir(BASE_FOLDER) if os.path.isdir(os.path.join(BASE_FOLDER, f))]
+        subfolders.sort()
+        
+        print(f"Znaleziono {len(subfolders)} podfolderów")
+        
+        for folder_name in subfolders:
+            folder_path = os.path.join(BASE_FOLDER, folder_name)
+            output_filename = f"atlas_{folder_name}.png"
+            output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+            
+            print(f"\nPrzetwarzanie: {folder_name}")
+            create_atlas(folder_path, output_path)
+        
+        print(f"\nZakończono! Atlasy zapisano w: {OUTPUT_FOLDER}")
