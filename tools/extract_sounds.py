@@ -1,10 +1,11 @@
-import struct
+﻿import struct
 import wave
 import os
 
-# Sound names from sndmast.h
+# Sound names from sndmast.h (index = sound ID used in weapon.json)
+# ID 0 = S_NONE = silence, not stored in the file
 SOUND_NAMES = [
-    "S_NONE",              # 0
+    None,                  # 0 - S_NONE (not in file)
     "S_WEAPON_1",          # 1
     "S_WEAPON_2",          # 2
     "S_ENEMY_HIT",         # 3
@@ -12,7 +13,7 @@ SOUND_NAMES = [
     "S_WEAPON_5",          # 5
     "S_WEAPON_6",          # 6
     "S_WEAPON_7",          # 7
-    "S_SELECT_EXPLOSION_8",# 8 (both S_SELECT and S_EXPLOSION_8 map to 8)
+    "S_SELECT_EXPLOSION_8",# 8  (S_SELECT and S_EXPLOSION_8 are both 8)
     "S_EXPLOSION_9",       # 9
     "S_WEAPON_10",         # 10
     "S_EXPLOSION_11",      # 11
@@ -47,56 +48,55 @@ SOUND_NAMES = [
 
 def extract_tyrian_sounds(snd_file, output_dir):
     """Extract all sounds from Tyrian .snd file to WAV format"""
-    
-    with open(snd_file, 'rb') as f:
+
+    with open(snd_file, "rb") as f:
         data = f.read()
-    
+
     # Read header
-    num_sounds = struct.unpack('<H', data[:2])[0]
-    offsets = struct.unpack(f'<{num_sounds}I', data[2:2+4*num_sounds])
-    
-    print(f'Extracting {num_sounds} sounds from {snd_file}')
-    
-    # Create output directory
+    num_sounds = struct.unpack("<H", data[:2])[0]
+    offsets = struct.unpack(f"<{num_sounds}I", data[2:2+4*num_sounds])
+
+    print(f"Extracting {num_sounds} sounds from {snd_file}")
+
     os.makedirs(output_dir, exist_ok=True)
-    
-    # Create index file
-    index_path = os.path.join(output_dir, 'sound_index.txt')
-    with open(index_path, 'w') as idx:
+
+    index_path = os.path.join(output_dir, "sound_index.txt")
+    with open(index_path, "w") as idx:
         idx.write("Tyrian Sound Effects Index\n")
         idx.write("===========================\n\n")
         idx.write(f"Total sounds: {num_sounds}\n")
-        idx.write(f"Format: 8-bit signed PCM, mono, 11025 Hz\n\n")
-    
-    # Extract each sound
+        idx.write("Format: 8-bit signed PCM, mono, 11025 Hz\n\n")
+        idx.write("Note: file entry i=0 -> sound ID 1 (S_NONE/ID=0 is silence, not stored)\n\n")
+
     for i in range(num_sounds):
         start = offsets[i]
         end = offsets[i+1] if i < num_sounds-1 else len(data)
         sound_data = data[start:end]
-        
-        # Convert to signed 8-bit (0x80 = 0)
-        signed_data = bytes([(b - 128) & 0xFF for b in sound_data])
-        
-        # Create WAV file with descriptive name
-        sound_name = SOUND_NAMES[i] if i < len(SOUND_NAMES) else f"S_UNKNOWN_{i}"
-        output_path = os.path.join(output_dir, f'{i:03d}_{sound_name}.wav')
-        with wave.open(output_path, 'wb') as wav:
-            wav.setnchannels(1)  # Mono
-            wav.setsampwidth(1)  # 8-bit
-            wav.setframerate(11025)  # Tyrian uses 11025 Hz
-            wav.writeframes(signed_data)
-        
-        # Add to index
-        with open(index_path, 'a') as idx:
-            duration_ms = len(sound_data) * 1000 // 11025
-            idx.write(f"{i:3d}: {sound_name:25s} - {len(sound_data):6d} bytes ({duration_ms:4d} ms)\n")
-        
-        print(f'  Sound {i:3d}: {sound_name:25s} - {len(sound_data):6d} bytes -> {output_path}')
-    
-    print(f'\nAll sounds extracted to {output_dir}')
-    print(f'Sound index saved to {index_path}')
 
-if __name__ == '__main__':
-    snd_file = r'c:\Users\borys\projekty\Tyrian\tyrian21\tyrian.snd'
-    output_dir = r'c:\Users\borys\projekty\Tyrian\extracted_sounds'
+        # Convert from unsigned (0x80=silence) to signed 8-bit
+        signed_data = bytes([(b - 128) & 0xFF for b in sound_data])
+
+        # File entry i corresponds to sound ID i+1
+        sound_id = i + 1
+        sound_name = SOUND_NAMES[sound_id] if sound_id < len(SOUND_NAMES) else f"S_UNKNOWN_{sound_id}"
+
+        output_path = os.path.join(output_dir, f"{sound_id:03d}_{sound_name}.wav")
+        with wave.open(output_path, "wb") as wav:
+            wav.setnchannels(1)
+            wav.setsampwidth(1)
+            wav.setframerate(11025)
+            wav.writeframes(signed_data)
+
+        with open(index_path, "a") as idx:
+            duration_ms = len(sound_data) * 1000 // 11025
+            idx.write(f"{sound_id:3d}: {sound_name:25s} - {len(sound_data):6d} bytes ({duration_ms:4d} ms)\n")
+
+        print(f"  Sound {sound_id:3d}: {sound_name:25s} - {len(sound_data):6d} bytes -> {output_path}")
+
+    print(f"\nAll sounds extracted to {output_dir}")
+    print(f"Sound index saved to {index_path}")
+
+if __name__ == "__main__":
+    snd_file = r"c:\Users\borys\projekty\Tyrian\tyrian21\tyrian.snd"
+    output_dir = r"c:\Users\borys\projekty\Galaxid\data\extracted_sounds"
     extract_tyrian_sounds(snd_file, output_dir)
