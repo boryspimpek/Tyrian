@@ -7,7 +7,7 @@ from functools import lru_cache
 from PIL import Image
 
 BASE_TILES_DIR = r"../tyrian21/extracted_tiles"
-OUTPUT_PATH = r"C:\Users\borys\projekty\Galaxid\data\enemy_lvl1"
+OUTPUT_PATH = r"C:\Users\borys\projekty\Galaxid\data\enemy_lvl17"
 
 # Tutaj znajduje się lista przeciwnikow, maja przypisane różne parametry, 
 # miedzy innymi "index" co odpowiada "enemy_id" w lvl1.json
@@ -15,7 +15,7 @@ JSON_FILE = r"C:\Users\borys\projekty\Galaxid\data\enemies.json"
 
 # Tutaj znajduje sie struktura poziomow, sa tu zapisana lista shapebanks, ktorą musimy wyciągnąć 
 # oraz są eventy w ktorych spawnują się wrogowie, potrzebujemy wyciągnąć wszystkich wrogów
-LEVELS_FILE = r"C:\Users\borys\projekty\Galaxid\data\lvl1.json"  
+LEVELS_FILE = r"C:\Users\borys\projekty\Galaxid\data\lvl17.json"  
 
 
 def load_level_data(levels_file):
@@ -141,7 +141,10 @@ def render_frame_1x1(tile_idx, tiles_dir):
     return img.copy() if img else None
 
 def render_frame_2x2(start_tile, tiles_dir):
-    canvas = Image.new('RGBA', (TILE_W * 2, TILE_H * 2), (0, 0, 0, 0))
+    # Canvas musi być wystarczająco duży dla wszystkich offsetów
+    # max paste_x = TILE_W + 6 = 18, max paste_y = TILE_H + 7 = 21
+    # kafelek 12x14, więc canvas musi być min 30x35
+    canvas = Image.new('RGBA', (35, 40), (0, 0, 0, 0))
     found_any = False
     for tile_offset, (dx, dy) in zip(LARGE_ENEMY_TILE_OFFSETS, LARGE_ENEMY_OFFSETS):
         tile_idx = start_tile + tile_offset
@@ -152,8 +155,7 @@ def render_frame_2x2(start_tile, tiles_dir):
             canvas.paste(img, (paste_x, paste_y), img)
             found_any = True
     if found_any:
-        bbox = canvas.getbbox()
-        return canvas.crop(bbox) if bbox else canvas
+        return canvas
     return None
 
 def render_megashape(egraphic, tiles_dir):
@@ -288,7 +290,7 @@ def main():
     print(f"Znaleziono {len(level_enemies)} wpisów w enemies.json pasujących do levelu.")
 
     if len(sys.argv) < 2:
-        print("Użycie: python script.py <indeks>|--all")
+        print("Użycie: python compose_enemy.py --all")
         return
 
     command = sys.argv[1]
