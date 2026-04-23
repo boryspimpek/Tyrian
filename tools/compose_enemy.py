@@ -128,7 +128,18 @@ def load_tile_cached(tiles_dir, tile_idx):
     if os.path.exists(tile_path):
         try:
             with Image.open(tile_path) as img:
-                return img.convert("RGBA").copy()
+                img = img.convert("RGBA")
+                # Zamień czarne piksele na przezroczyste
+                datas = img.getdata()
+                new_data = []
+                for item in datas:
+                    # Jeśli piksel jest czarny (lub prawie czarny), ustaw alpha na 0
+                    if item[0] < 10 and item[1] < 10 and item[2] < 10:
+                        new_data.append((0, 0, 0, 0))
+                    else:
+                        new_data.append(item)
+                img.putdata(new_data)
+                return img
         except Exception:
             return None
     return None
@@ -144,7 +155,7 @@ def render_frame_2x2(start_tile, tiles_dir):
     # Canvas musi być wystarczająco duży dla wszystkich offsetów
     # max paste_x = TILE_W + 6 = 18, max paste_y = TILE_H + 7 = 21
     # kafelek 12x14, więc canvas musi być min 30x35
-    canvas = Image.new('RGBA', (35, 40), (0, 0, 0, 0))
+    canvas = Image.new('RGBA', (35, 35), (0, 0, 0, 0))
     found_any = False
     for tile_offset, (dx, dy) in zip(LARGE_ENEMY_TILE_OFFSETS, LARGE_ENEMY_OFFSETS):
         tile_idx = start_tile + tile_offset
@@ -187,10 +198,7 @@ def render_megashape(egraphic, tiles_dir):
 
 def save_enemy_image(canvas, out_dir, filename):
     if canvas and canvas.getbbox():
-        if canvas.mode == 'RGBA':
-            bg = Image.new('RGB', canvas.size, (0, 0, 0))
-            bg.paste(canvas, mask=canvas.split()[3])
-            canvas = bg
+        # Zapisz bezpośrednio jako PNG z przezroczystością
         canvas.save(os.path.join(out_dir, filename), optimize=True)
         return True
     return False
