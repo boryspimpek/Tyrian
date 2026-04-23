@@ -34,6 +34,15 @@ SOUND_NAMES = [
     "S_SHIELD_HIT",        # 27
     "S_CURSOR",            # 28
     "S_POWERUP",           # 29
+    "V_CLEARED_PLATFORM",  # 30 - "Cleared enemy platform."
+    "V_BOSS",              # 31 - "Large enemy approaching."
+    "V_ENEMIES",           # 32 - "Enemies ahead."
+    "V_GOOD_LUCK",         # 33 - "Good luck."
+    "V_LEVEL_END",         # 34 - "Level completed."
+    "V_DANGER",            # 35 - "Danger."
+    "V_SPIKES",            # 36 - "Warning: spikes ahead."
+    "V_DATA_CUBE",         # 37 - "Data acquired."
+    "V_ACCELERATE",        # 38 - "Unexplained speed increase."
 ]
 
 def extract_tyrian_sounds(snd_file, output_dir):
