@@ -62,7 +62,10 @@ def extract_newsh(file_path, pal_path):
         print(f"Nie znaleziono: {file_path}"); return
 
     base = os.path.basename(file_path).lower()
-    out_dir = f"extracted_{base}"
+    out_dir = os.path.join(
+        r"C:\Users\borys\projekty\Tyrian\tyrian21\extracted_tiles",
+        f"extracted_{base}",
+    )
     os.makedirs(out_dir, exist_ok=True)
 
     with open(file_path, "rb") as f:
@@ -89,4 +92,7 @@ def extract_newsh(file_path, pal_path):
     print(f"{base}: {n_sprites} sprite'ow w tabeli, zapisano {saved} BMP -> {out_dir}/")
 
 
-extract_newsh("newsh2.shp", "palette.dat")
+extract_newsh(
+    r"C:\Users\borys\projekty\Tyrian\tyrian21\newsh2.shp",
+    r"C:\Users\borys\projekty\Tyrian\tyrian21\palette.dat",
+)

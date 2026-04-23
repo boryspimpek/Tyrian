@@ -1,3 +1,20 @@
+"""
+Wyodrebnia sprite'y z pliku tyrian.shp do osobnych plikow BMP.
+
+tyrian.shp zawiera 12 bankow grafik uzywanych przez interfejs i statki gracza:
+  Banki 0-6  (font_a..interface3) — format sekwencyjny (load_sprites):
+               liczba sprite'ow (U16), nastepnie dla kazdego:
+               populated (U8), szerokosc (U16), wysokosc (U16), rozmiar (U16), dane.
+               Kompresja: 0xFF=pominij_n, 0xFE=nowy_wiersz, 0xFD=pominij_1, else=piksel.
+  Banki 7-11 (shots, ships, powerups, items, shots2) — format Nibble-RLE (Sprite2),
+               identyczny z plikami newsh*.shp: tabela offsetow WORD na poczatku banku,
+               szerokosc stala = 12px, wysokosc wykrywana automatycznie z danych,
+               terminator 0x0F konczy sprite.
+
+Paleta: plik palette.dat (768 bajtow RGB, wartosci 6-bit VGA mnozone x4).
+Wynik:  folder extracted_tyrian_shp/ z plikami {bank}_{index:04d}.bmp.
+"""
+
 import struct
 import os
 
@@ -133,7 +150,7 @@ def extract_tyrian_shp(file_path, pal_path):
     if not os.path.exists(file_path):
         print(f"Nie znaleziono pliku: {file_path}"); return
 
-    out_dir = "extracted_tyrian_shp"
+    out_dir = r"C:\Users\borys\projekty\Tyrian\tyrian21\extracted_tiles\extracted_tyrian_shp"
     os.makedirs(out_dir, exist_ok=True)
 
     file_size = os.path.getsize(file_path)
@@ -155,4 +172,7 @@ def extract_tyrian_shp(file_path, pal_path):
     print(f"\nWyodrebniono {count} sprite'ow -> {out_dir}/")
 
 
-extract_tyrian_shp("tyrian.shp", "palette.dat")
+extract_tyrian_shp(
+    r"C:\Users\borys\projekty\Tyrian\tyrian21\tyrian.shp",
+    r"C:\Users\borys\projekty\Tyrian\tyrian21\palette.dat",
+)
