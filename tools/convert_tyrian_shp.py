@@ -172,7 +172,7 @@ def extract_tyrian_shp(file_path, pal_path):
     if not os.path.exists(file_path):
         print(f"Nie znaleziono pliku: {file_path}"); return
 
-    out_dir = r"C:\Users\borys\projekty\Tyrian\tyrian21\extracted_tiles\extracted_tyrian_shp"
+    out_dir = r"C:\Users\borys\projekty\Tyrian\extracted_tiles\extracted_tyrian_shp"
     os.makedirs(out_dir, exist_ok=True)
 
     file_size = os.path.getsize(file_path)

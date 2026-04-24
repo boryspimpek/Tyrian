@@ -8,8 +8,8 @@ from collections import defaultdict
 from PIL import Image, ImageDraw, ImageFont
 
 WEAPONS_JSON = r"C:\Users\borys\projekty\Tyrian\data\weapon.json"
-SPRITE_DIR   = r"C:\Users\borys\projekty\Tyrian\tyrian21\extracted_tiles\extracted_tyrian_shp"
-OUT_DIR      = r"C:\Users\borys\projekty\Tyrian\tyrian21\atlases"
+SPRITE_DIR   = r"C:\Users\borys\projekty\Tyrian\extracted_tiles\extracted_tyrian_shp"
+OUT_DIR      = r"C:\Users\borys\projekty\Tyrian\atlases"
 
 TILES_PER_ROW = 20
 LABEL_TOP  = 10

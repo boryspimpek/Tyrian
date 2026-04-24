@@ -63,7 +63,7 @@ def extract_newsh(file_path, pal_path):
 
     base = os.path.basename(file_path).lower()
     out_dir = os.path.join(
-        r"C:\Users\borys\projekty\Tyrian\tyrian21\extracted_tiles",
+        r"C:\Users\borys\projekty\Tyrian\extracted_tiles",
         f"extracted_{base}",
     )
     os.makedirs(out_dir, exist_ok=True)

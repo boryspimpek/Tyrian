@@ -98,5 +98,5 @@ def extract_tyrian_sounds(snd_file, output_dir):
 
 if __name__ == "__main__":
     snd_file = r"c:\Users\borys\projekty\Tyrian\tyrian21\tyrian.snd"
-    output_dir = r"c:\Users\borys\projekty\Galaxid\data\extracted_sounds"
+    output_dir = r"c:\Users\borys\projekty\Tyrian\extracted_sounds"
     extract_tyrian_sounds(snd_file, output_dir)

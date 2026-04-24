@@ -2,8 +2,8 @@ import os
 from collections import defaultdict
 from PIL import Image, ImageDraw, ImageFont
 
-SRC_FOLDER  = r"C:\Users\borys\projekty\Tyrian\tyrian21\extracted_tiles\extracted_tyrian_shp"
-OUT_FOLDER  = r"C:\Users\borys\projekty\Tyrian\tyrian21\atlases"
+SRC_FOLDER  = r"C:\Users\borys\projekty\Tyrian\extracted_tiles\extracted_tyrian_shp"
+OUT_FOLDER  = r"C:\Users\borys\projekty\Tyrian\atlases"
 TILES_PER_ROW = 20
 LABEL_H = 10   # piksele na etykietę indeksu nad sprite'em
 GAP = 3        # odstęp między komórkami

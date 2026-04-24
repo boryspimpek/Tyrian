@@ -2,8 +2,8 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 
 # --- KONFIGURACJA ---
-BASE_FOLDER = r"C:\Users\borys\projekty\Tyrian\tyrian21\extracted_tiles"  # Folder bazowy z podfolderami
-OUTPUT_FOLDER = r"C:\Users\borys\projekty\Tyrian\tyrian21\atlases"  # Folder na wygenerowane atlasy
+BASE_FOLDER = r"C:\Users\borys\projekty\Tyrian\extracted_tiles"  # Folder bazowy z podfolderami
+OUTPUT_FOLDER = r"C:\Users\borys\projekty\Tyrian\atlases"  # Folder na wygenerowane atlasy
 TILES_PER_ROW = 20  # Ile kafelków w jednym rzędzie atlasu
 TILE_W, TILE_H = 12, 14
 PADDING = 10  # Miejsce na tekst (indeks kafelka)

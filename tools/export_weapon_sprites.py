@@ -12,8 +12,8 @@ import re
 
 PORTS_JSON   = r"C:\Users\borys\projekty\Tyrian\data\weapon_ports.json"
 WEAPONS_JSON = r"C:\Users\borys\projekty\Tyrian\data\weapon.json"
-SPRITE_DIR   = r"C:\Users\borys\projekty\Tyrian\tyrian21\extracted_tiles\extracted_tyrian_shp"
-OUT_DIR      = r"C:\Users\borys\projekty\Tyrian\tyrian21\weapon_sprites"
+SPRITE_DIR   = r"C:\Users\borys\projekty\Tyrian\extracted_tiles\extracted_tyrian_shp"
+OUT_DIR      = r"C:\Users\borys\projekty\Tyrian\extracted_weapon_sprites"
 
 
 def sg_to_file(sg):
