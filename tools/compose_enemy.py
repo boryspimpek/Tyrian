@@ -7,7 +7,7 @@ from functools import lru_cache
 from PIL import Image
 
 BASE_TILES_DIR = r"../tyrian21/extracted_tiles"
-OUTPUT_PATH = r"C:\Users\borys\projekty\Galaxid\data\enemy_lvl17"
+OUTPUT_PATH = r"C:\Users\borys\projekty\Tyrian\enemy_lvl17"
 
 # Tutaj znajduje się lista przeciwnikow, maja przypisane różne parametry, 
 # miedzy innymi "index" co odpowiada "enemy_id" w lvl1.json

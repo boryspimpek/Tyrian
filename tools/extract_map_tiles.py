@@ -50,7 +50,7 @@ BASE         = SCRIPT_DIR.parent
 DATA_DIR     = BASE / 'tyrian21'
 MAPPING_FILE = BASE / 'data' / 'episode1_level_mapping.json'
 LVL_FILE     = DATA_DIR / 'tyrian1.lvl'
-OUT_DIR      = BASE / 'extracted_tiles'
+OUT_DIR      = BASE / 'extracted_map_tiles'
 
 # ─── Stałe ───────────────────────────────────────────────────────────────────
 
