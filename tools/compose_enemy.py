@@ -7,7 +7,7 @@ from functools import lru_cache
 from PIL import Image
 
 BASE_TILES_DIR = r"../tyrian21/extracted_tiles"
-OUTPUT_PATH = r"C:\Users\borys\projekty\Galaxid\data\enemy_lvl35"
+OUTPUT_PATH = r"C:\Users\borys\projekty\Galaxid\data\enemy_lvl17"
 
 # Tutaj znajduje się lista przeciwnikow, maja przypisane różne parametry, 
 # miedzy innymi "index" co odpowiada "enemy_id" w lvl1.json
@@ -15,7 +15,7 @@ JSON_FILE = r"C:\Users\borys\projekty\Galaxid\data\enemies.json"
 
 # Tutaj znajduje sie struktura poziomow, sa tu zapisana lista shapebanks, ktorą musimy wyciągnąć 
 # oraz są eventy w ktorych spawnują się wrogowie, potrzebujemy wyciągnąć wszystkich wrogów
-LEVELS_FILE = r"C:\Users\borys\projekty\Galaxid\data\lvl35.json"  
+LEVELS_FILE = r"C:\Users\borys\projekty\Galaxid\data\lvl17.json"  
 
 
 def load_level_data(levels_file):
@@ -65,7 +65,7 @@ def load_level_data(levels_file):
 
 TILE_W, TILE_H = 12, 14
 
-LARGE_ENEMY_OFFSETS = [(-6, -7), (6, -7), (-6, 7), (6, 7)]
+LARGE_ENEMY_OFFSETS = [(-6, -7), (5, -7), (-6, 6), (5, 6)]
 LARGE_ENEMY_TILE_OFFSETS = [0, 1, 19, 20]
 
 MEGASHAPE_CENTER_X, MEGASHAPE_CENTER_Y = 128, 128
