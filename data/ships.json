@@ -1,0 +1,198 @@
+[
+  {
+    "index": 0,
+    "name": "None",
+    "stats": {
+      "armor": 0,
+      "maneuverability": 1,
+      "speed_forward": 0,
+      "speed_reverse": 2,
+      "rear_weapon_type": 0,
+      "sidekick_type": 0,
+      "sprite_id": 0,
+      "availability": 0
+    }
+  },
+  {
+    "index": 1,
+    "name": "USP Talon",
+    "stats": {
+      "armor": 233,
+      "maneuverability": 21,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 0,
+      "sidekick_type": 10,
+      "sprite_id": 6000,
+      "availability": 32
+    }
+  },
+  {
+    "index": 2,
+    "name": "SuperCarrot",
+    "stats": {
+      "armor": 119,
+      "maneuverability": 25,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 254,
+      "sidekick_type": 26,
+      "sprite_id": 65000,
+      "availability": 32
+    }
+  },
+  {
+    "index": 3,
+    "name": "Gencore Phoenix",
+    "stats": {
+      "armor": 157,
+      "maneuverability": 17,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 255,
+      "sidekick_type": 17,
+      "sprite_id": 12000,
+      "availability": 28
+    }
+  },
+  {
+    "index": 4,
+    "name": "Gencore Maelstrom",
+    "stats": {
+      "armor": 157,
+      "maneuverability": 17,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 0,
+      "sidekick_type": 20,
+      "sprite_id": 15000,
+      "availability": 28
+    }
+  },
+  {
+    "index": 5,
+    "name": "MicroCorp Stalker",
+    "stats": {
+      "armor": 195,
+      "maneuverability": 19,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 254,
+      "sidekick_type": 25,
+      "sprite_id": 20000,
+      "availability": 33
+    }
+  },
+  {
+    "index": 6,
+    "name": "MicroCorp Stalker-B",
+    "stats": {
+      "armor": 195,
+      "maneuverability": 19,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 254,
+      "sidekick_type": 27,
+      "sprite_id": 25000,
+      "availability": 33
+    }
+  },
+  {
+    "index": 7,
+    "name": "Prototype Stalker-C",
+    "stats": {
+      "armor": 195,
+      "maneuverability": 19,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 0,
+      "sidekick_type": 28,
+      "sprite_id": 50000,
+      "availability": 33
+    }
+  },
+  {
+    "index": 8,
+    "name": "Stalker",
+    "stats": {
+      "armor": 195,
+      "maneuverability": 19,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 0,
+      "sidekick_type": 15,
+      "sprite_id": 10000,
+      "availability": 33
+    }
+  },
+  {
+    "index": 9,
+    "name": "USP Fang",
+    "stats": {
+      "armor": 233,
+      "maneuverability": 21,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 0,
+      "sidekick_type": 14,
+      "sprite_id": 8000,
+      "availability": 32
+    }
+  },
+  {
+    "index": 10,
+    "name": "U-Ship",
+    "stats": {
+      "armor": 271,
+      "maneuverability": 21,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 0,
+      "sidekick_type": 8,
+      "sprite_id": 8000,
+      "availability": 28
+    }
+  },
+  {
+    "index": 11,
+    "name": "Silver Ship",
+    "stats": {
+      "armor": 81,
+      "maneuverability": 21,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 0,
+      "sidekick_type": 10,
+      "sprite_id": 8000,
+      "availability": 32
+    }
+  },
+  {
+    "index": 12,
+    "name": "Nort Ship",
+    "stats": {
+      "armor": 1,
+      "maneuverability": 21,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 0,
+      "sidekick_type": 30,
+      "sprite_id": 65000,
+      "availability": 33
+    }
+  },
+  {
+    "index": 13,
+    "name": "The Stalker 21.126",
+    "stats": {
+      "armor": 195,
+      "maneuverability": 19,
+      "speed_forward": 1,
+      "speed_reverse": 2,
+      "rear_weapon_type": 0,
+      "sidekick_type": 30,
+      "sprite_id": 65535,
+      "availability": 33
+    }
+  }
+]
