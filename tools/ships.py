@@ -14,8 +14,8 @@ def extract_ships_final_victory():
     WEAP_NUM, PORT_NUM, SPECIAL_NUM, POWER_NUM, SHIP_NUM = 780, 42, 46, 6, 13
     SIZES = {'weap': 80, 'port': 82, 'spec': 37, 'pwr': 37}
 
-    SHIP_FMT = "<B30s H BBB B B H B" 
-    # 1+30 + 2 + 1+1+1 + 1 + 1 + 2 + 1 = 41 bajtów
+    SHIP_FMT = "<B30s H H B b B H B"
+    # 1+30 + 2 + 2 + 1 + 1 + 1 + 2 + 1 = 41 bajtów
 
     try:
         with open(hdt_path, "rb") as f:
@@ -39,14 +39,13 @@ def extract_ships_final_victory():
                     "index": i,
                     "name": name,
                     "stats": {
-                        "armor": r[2],
-                        "maneuverability": r[3],
-                        "speed_forward": r[4],
-                        "speed_reverse": r[5],
-                        "rear_weapon_type": r[6], # 0=standard, 254/255=special
-                        "sidekick_type": r[7],   # To określa jakie sidekicki pasują
-                        "sprite_id": r[8],
-                        "availability": r[9]
+                        "ship_graphic": r[2],    # indeks sprite'a w spriteSheet9
+                        "item_graphic": r[3],    # indeks sprite'a w menu przedmiotów
+                        "ani": r[4],             # typ animacji (0=szeroki, 1=wąski)
+                        "speed": r[5],           # modyfikator prędkości (signed)
+                        "armor": r[6],           # punkty wytrzymałości kadłuba (max 28 w grze)
+                        "cost": r[7],            # cena w sklepie
+                        "big_ship_graphic": r[8] # indeks dużego sprite'a w menu
                     },
                 })
 

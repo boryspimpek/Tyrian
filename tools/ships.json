@@ -1,0 +1,184 @@
+[
+  {
+    "index": 0,
+    "name": "None",
+    "stats": {
+      "ship_graphic": 0,
+      "item_graphic": 1,
+      "ani": 2,
+      "speed": 0,
+      "armor": 0,
+      "cost": 0,
+      "big_ship_graphic": 0
+    }
+  },
+  {
+    "index": 1,
+    "name": "USP Talon Light Fighter",
+    "stats": {
+      "ship_graphic": 233,
+      "item_graphic": 277,
+      "ani": 2,
+      "speed": 0,
+      "armor": 10,
+      "cost": 6000,
+      "big_ship_graphic": 32
+    }
+  },
+  {
+    "index": 2,
+    "name": "SuperCarrot",
+    "stats": {
+      "ship_graphic": 119,
+      "item_graphic": 281,
+      "ani": 2,
+      "speed": -2,
+      "armor": 26,
+      "cost": 65000,
+      "big_ship_graphic": 32
+    }
+  },
+  {
+    "index": 3,
+    "name": "Gencore Phoenix",
+    "stats": {
+      "ship_graphic": 157,
+      "item_graphic": 273,
+      "ani": 2,
+      "speed": -1,
+      "armor": 17,
+      "cost": 12000,
+      "big_ship_graphic": 28
+    }
+  },
+  {
+    "index": 4,
+    "name": "Gencore Maelstrom",
+    "stats": {
+      "ship_graphic": 157,
+      "item_graphic": 273,
+      "ani": 2,
+      "speed": 0,
+      "armor": 20,
+      "cost": 15000,
+      "big_ship_graphic": 28
+    }
+  },
+  {
+    "index": 5,
+    "name": "MicroCorp Stalker",
+    "stats": {
+      "ship_graphic": 195,
+      "item_graphic": 275,
+      "ani": 2,
+      "speed": -2,
+      "armor": 25,
+      "cost": 20000,
+      "big_ship_graphic": 33
+    }
+  },
+  {
+    "index": 6,
+    "name": "MicroCorp Stalker-B",
+    "stats": {
+      "ship_graphic": 195,
+      "item_graphic": 275,
+      "ani": 2,
+      "speed": -2,
+      "armor": 27,
+      "cost": 25000,
+      "big_ship_graphic": 33
+    }
+  },
+  {
+    "index": 7,
+    "name": "Prototype Stalker-C",
+    "stats": {
+      "ship_graphic": 195,
+      "item_graphic": 275,
+      "ani": 2,
+      "speed": 0,
+      "armor": 28,
+      "cost": 50000,
+      "big_ship_graphic": 33
+    }
+  },
+  {
+    "index": 8,
+    "name": "Stalker",
+    "stats": {
+      "ship_graphic": 195,
+      "item_graphic": 275,
+      "ani": 2,
+      "speed": 0,
+      "armor": 15,
+      "cost": 10000,
+      "big_ship_graphic": 33
+    }
+  },
+  {
+    "index": 9,
+    "name": "USP Fang Light Fighter",
+    "stats": {
+      "ship_graphic": 233,
+      "item_graphic": 277,
+      "ani": 2,
+      "speed": 0,
+      "armor": 14,
+      "cost": 8000,
+      "big_ship_graphic": 32
+    }
+  },
+  {
+    "index": 10,
+    "name": "U-Ship",
+    "stats": {
+      "ship_graphic": 271,
+      "item_graphic": 277,
+      "ani": 2,
+      "speed": 0,
+      "armor": 8,
+      "cost": 8000,
+      "big_ship_graphic": 28
+    }
+  },
+  {
+    "index": 11,
+    "name": "Silver Ship",
+    "stats": {
+      "ship_graphic": 81,
+      "item_graphic": 277,
+      "ani": 2,
+      "speed": 0,
+      "armor": 10,
+      "cost": 8000,
+      "big_ship_graphic": 32
+    }
+  },
+  {
+    "index": 12,
+    "name": "Nort Ship",
+    "stats": {
+      "ship_graphic": 1,
+      "item_graphic": 277,
+      "ani": 2,
+      "speed": 0,
+      "armor": 30,
+      "cost": 65000,
+      "big_ship_graphic": 33
+    }
+  },
+  {
+    "index": 13,
+    "name": "The Stalker 21.126",
+    "stats": {
+      "ship_graphic": 195,
+      "item_graphic": 275,
+      "ani": 2,
+      "speed": 0,
+      "armor": 30,
+      "cost": 65535,
+      "big_ship_graphic": 33
+    }
+  }
+]
