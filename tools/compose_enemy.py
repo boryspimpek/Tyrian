@@ -7,7 +7,7 @@ from functools import lru_cache
 from PIL import Image
 
 BASE_TILES_DIR = r"C:\Users\borys\projekty\Tyrian\extracted_tiles"
-OUTPUT_PATH = r"C:\Users\borys\projekty\Tyrian\tyrian21\enemy_lvl17"
+OUTPUT_PATH = r"C:\Users\borys\projekty\Tyrian\tyrian21\enemy_lvl5"
 
 # Tutaj znajduje się lista przeciwnikow, maja przypisane różne parametry, 
 # miedzy innymi "index" co odpowiada "enemy_id" w lvl1.json
@@ -15,7 +15,7 @@ JSON_FILE = r"C:\Users\borys\projekty\Tyrian\data\enemies.json"
 
 # Tutaj znajduje sie struktura poziomow, sa tu zapisana lista shapebanks, ktorą musimy wyciągnąć 
 # oraz są eventy w ktorych spawnują się wrogowie, potrzebujemy wyciągnąć wszystkich wrogów
-LEVELS_FILE = r"C:\Users\borys\projekty\Tyrian\data\lvl17.json"  
+LEVELS_FILE = r"C:\Users\borys\projekty\Tyrian\data\lvl5.json"  
 
 
 def load_level_data(levels_file):
