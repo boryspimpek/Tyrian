@@ -65,28 +65,36 @@ def export():
         if not w:
             continue
 
+        anim_count = max(1, w.get("weapAni", 0))
         seen = set()
         for p in w["patterns"][:w["max"]]:
-            fname = sg_to_file(p["sg"])
-            if not fname or fname in seen:
+            sg0 = p["sg"]
+            fname0 = sg_to_file(sg0)
+            if not fname0 or fname0 in seen:
                 continue
-            seen.add(fname)
+            seen.add(fname0)
 
-            src = os.path.join(SPRITE_DIR, fname)
-            if not os.path.exists(src):
-                missing += 1
-                print(f"  BRAK: {fname}  (wid={wid})")
-                continue
+            # Eksportuj klatkę bazową + wszystkie klatki animacji
+            for i in range(anim_count):
+                fname = sg_to_file(sg0 + i)
+                if not fname:
+                    continue
 
-            dst_name = f"enemy__w{wid:04d}__{fname}"
-            dst = os.path.join(OUT_DIR, dst_name)
+                src = os.path.join(SPRITE_DIR, fname)
+                if not os.path.exists(src):
+                    missing += 1
+                    print(f"  BRAK: {fname}  (wid={wid})")
+                    continue
 
-            if os.path.exists(dst):
-                skipped += 1
-                continue
+                dst_name = f"enemy__w{wid:04d}__{fname}"
+                dst = os.path.join(OUT_DIR, dst_name)
 
-            shutil.copy2(src, dst)
-            copied += 1
+                if os.path.exists(dst):
+                    skipped += 1
+                    continue
+
+                shutil.copy2(src, dst)
+                copied += 1
 
     print(f"\nSkopiowano: {copied}  Pominięto (już istnieje): {skipped}  Brak źródła: {missing}")
     print(f"Folder: {OUT_DIR}")
