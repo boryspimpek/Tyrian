@@ -391,6 +391,159 @@ armor 1-254 → normalny wróg, HP skalowane przez trudność (max 254)
 
 ---
 
+## System Śmierci i Eksplozji
+
+### Przepływ przy śmierci wroga
+
+Gdy HP wroga spada do zera (i nie zachodzi przypadek `edlevel == -1`):
+
+```
+1. Jeśli enemydie > 0 → spawnuj nowego wroga (ID = enemydie) w tej samej pozycji
+2. Jeśli esize == 1 → JE_setupExplosionLarge(enemyground, explonum, x, y)
+                       + dźwięk S_EXPLOSION_9
+   Jeśli esize == 0 → JE_setupExplosion(x, y, 0, 1, false, false)
+                       + dźwięk S_EXPLOSION_8
+3. enemyAvail = 1 (slot zwolniony), enemyKilled++
+```
+
+---
+
+### `JE_setupExplosion(x, y, deltaY, type, fixedPosition, followPlayer)`
+
+Dodaje jedną eksplozję do tablicy `explosions[MAX_EXPLOSIONS]`. Każda eksplozja ma:
+- `sprite` — startowy indeks sprite'a w `explosionSpriteSheet`; w każdej klatce przesuwa się o `+1` (animacja)
+- `ttl` — liczba klatek życia; po wyczerpaniu znika
+- `fixedPosition = false` → pozycja przesuwa się wraz ze scrollem (`explodeMove`)
+- `fixedPosition = true` → pozycja stała (używane dla wartości monet)
+- `followPlayer = true` → śledzi gracza (używane dla efektu trafienia w shield)
+
+**Tabela typów eksplozji (`type` 0–52):**
+
+| Type | Sprite start | TTL | Opis |
+|------|-------------|-----|------|
+| 0 | 144 | 7 | Mała eksplozja (trafienie, wygaśnięcie pocisku) |
+| 1 | 120 | 12 | Standardowa eksplozja małego wroga |
+| 2 | 190 | 12 | Duża — naziemna, lewy-górny kwadrant |
+| 3 | 209 | 12 | Duża — naziemna, lewy-dolny kwadrant |
+| 4 | 152 | 12 | Duża — naziemna, prawy-górny kwadrant |
+| 5 | 171 | 12 | Duża — naziemna, prawy-dolny kwadrant |
+| 6 | 133 | 7 | Biały dym (Savara Boss DualMissile) |
+| 7 | 1 | 12 | Duża — powietrzna, lewy-górny kwadrant |
+| 8 | 20 | 12 | Duża — powietrzna, lewy-dolny kwadrant |
+| 9 | 39 | 12 | Duża — powietrzna, prawy-górny kwadrant |
+| 10 | 58 | 12 | Duża — powietrzna, prawy-dolny kwadrant |
+| 11 | 110 | 3 | Krótka błyskawica |
+| 12 | 76 | 7 | Średnia eksplozja |
+| 13 | 91 | 3 | Krótka eksplozja |
+| 14–22 | 227–271 | 3 | Efekty trafienia gracza w shield (górny rząd) |
+| 23–35 | 236–293 | 3 | Efekty trafienia gracza w shield (dolny rząd) |
+| 36–52 | 165–265 | 8–20 | Wartości punktowe monet/klejnotów (fixedPosition) |
+
+**Specjalne wartości `type`:**
+- `type = 6` przy `tur[x] == 252` (Savara Boss): przesuwa eksplozję o `(+2, +12)` — efekt dymu
+- `type = 98` (shotTrail): traktowany jak `type = 6`
+
+---
+
+### `JE_setupExplosionLarge(enemyGround, exploNum, x, y)`
+
+Wywołana dla dużych wrogów (`esize == 1`). Tworzy **4 eksplozje w rogach** wokół centrum:
+
+```
+Pozycje względem (x, y):    Typ dla enemyGround:    Typ dla wrogów powietrznych:
+  (x-6, y-14)  →  type 2 (naziemna) / type 7 (powietrzna)
+  (x+6, y-14)  →  type 4             / type 9
+  (x-6, y)     →  type 3             / type 8
+  (x+6, y)     →  type 5             / type 10
+```
+
+Następnie, jeśli `exploNum > 0`, tworzy **powtarzającą eksplozję** (`rep_explosion`):
+
+| Wartość exploNum | Efekt |
+|---|---|
+| `1–10` | Mała; powtarza się `exploNum` razy co ~3 klatki; dźwięk `S_EXPLOSION_4` |
+| `11–17` | Duża; `exploNum -= 10`; powtarza się `exploNum-10` razy co ~4–7 klatek; dźwięk `S_EXPLOSION_9` / `S_EXPLOSION_11` |
+
+Każda iteracja powtarzającej eksplozji jest losowo przesunięta o `±12px` (X) i `±24px` (Y) od centrum, a centrum dryfuje w dół o `backMove2 + 1` px na iterację.
+
+**Mapowanie `explosiontype` → `explonum` dla znanych wartości:**
+
+| `explosiontype` | `enemyground` | `explonum` | Efekt |
+|---|---|---|---|
+| 5 | true (powietrzny) | 2 | 4× + 2 powtarzające małe |
+| 6 | false (naziemny) | 3 | 4× + 3 powtarzające małe |
+| 25 | true | 12 | 4× + 2 powtarzające duże |
+| 26 | false | 13 | 4× + 3 powtarzające duże |
+| 27 | true | 13 | 4× + 3 powtarzające duże |
+| 28 | false | 14 | 4× + 4 powtarzające duże |
+| 35 | true | 17 | 4× + 7 powtarzających dużych |
+
+---
+
+### System Faz Obrażeń (`dani` / `edlevel` / `edgr`)
+
+Gdy HP wroga spada do progu `edlevel` (`armorleft - damage <= edlevel`):
+
+```c
+// Warunek przejścia (toggle, uwzględnia dani < 0 dla spawnu z edamaged = true):
+if ((armorleft - damage <= edlevel) && ((!edamaged) ^ (edani < 0)))
+{
+    edamaged = !edamaged;           // toggle flagi
+
+    if (edani != 0)                 // animacja uszkodzenia
+    {
+        ani     = abs(edani);       // nowa granica animacji
+        aniactive = 1;
+        animin  = edgr;             // klatka startowa
+        animax  = 0;
+        enemycycle = edgr - 1;
+    }
+    else if (edgr > 0)             // statyczny sprite uszkodzenia
+    {
+        egr[0]   = edgr;
+        ani      = 1;
+        aniactive = 0;
+    }
+    else                           // brak grafiki → wróg znika
+    {
+        enemyAvail = 1;
+        enemyKilled++;
+    }
+}
+```
+
+- `edamaged == true` → wróg **pomijany przy renderowaniu** (niewidoczny)
+- `edamaged == false` → wróg renderowany normalnie
+- `dani < 0` w danych wroga → wróg **startuje** z `edamaged = true` (nieaktywny przy spawnie, aktywuje się dopiero po trafieniu do progu)
+
+---
+
+### `edlevel == -1` — Przejście do Fazy Bossowej
+
+Gdy HP = 0 i `edlevel == -1`:
+
+```
+Zamiast umierać wróg przechodzi w tryb "uszkodzony":
+  enemyAvail     = 2       (slot NIE jest zwalniany, wróg istnieje)
+  egr[0]         = edgr    (nowy sprite)
+  ani/aniactive  = 1/0/0   (animacja zatrzymana na 1 klatce)
+  edamaged       = true
+  enemycycle     = 1
+```
+
+Eksplozja jest wywołana normalnie, ale wróg pozostaje na ekranie z nową grafiką.
+
+---
+
+### `enemydie` — Spawn po Śmierci
+
+- Wartość `> 0` → przy śmierci wywołuje `JE_newEnemy(enemy_offset, enemydie, 0)`
+- Nowy wróg pojawia się w tej samej pozycji `(ex, ey)` co martwy wróg
+- Używane np. do wypuszczania power-upów, klejnotów lub mini-wrogów po unicestwieniu bosów
+- `enemy_offset = temp2 - (temp2 % 25)` — nowy wróg trafia do tego samego "bloku" 25 slotów (chyba że `value > 30000` → `enemy_offset = 0`)
+
+---
+
 ## Format Binarny (struct_fmt)
 
 ```python
