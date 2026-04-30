@@ -8,7 +8,7 @@ Naming: explo_t{type:02d}_{label}_f{frame:02d}.png
 
 Indeksowanie: blit_sprite2(sheet, index) używa 1-based index.
   sprite_start = explosion_data[type][0]
-  klatka 0 → blit(sprite_start + 1) → offset table entry [sprite_start]
+  klatka 0 -> blit(sprite_start + 1) -> offset table entry [sprite_start]
 """
 
 import struct
@@ -163,9 +163,17 @@ def parse_shp(path):
     return sprites
 
 
-def make_png(pixels, w, h, palette):
-    img = Image.new("RGBA", (w, h))
-    rgba_pixels = [palette[p] for p in pixels]
+def make_png(pixels, w, h, palette, pad_bottom=0):
+    if pad_bottom > 0:
+        # Add transparent rows at the bottom
+        transparent_pixels = [0] * (w * pad_bottom)  # transparent pixels (index 0)
+        new_pixels = list(pixels) + transparent_pixels
+        new_h = h + pad_bottom
+        img = Image.new("RGBA", (w, new_h))
+        rgba_pixels = [palette[p] for p in new_pixels]
+    else:
+        img = Image.new("RGBA", (w, h))
+        rgba_pixels = [palette[p] for p in pixels]
     img.putdata(rgba_pixels)
     return img
 
@@ -193,7 +201,15 @@ def export():
                 continue
 
             pixels, w, h = sprites[sheet_idx]
-            img = make_png(pixels, w, h, palette)
+
+            # Fix for large_ground and large_air bottom corners: pad bottom to reach height 13
+            pad_bottom = 0
+            if type_idx in (3, 5, 8, 10) and (label.startswith("large_ground") or label.startswith("large_air")):
+                target_height = 13
+                if h < target_height:
+                    pad_bottom = target_height - h
+
+            img = make_png(pixels, w, h, palette, pad_bottom)
 
             filename = f"explo_t{type_idx:02d}_{label}_f{frame:02d}.png"
             img.save(os.path.join(OUT_DIR, filename))
